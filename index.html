@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#201a34"><meta name="description" content="A private, local-first job-offer red-flag checker and verification guide.">
+  <link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="styles.css"><title>OfferSignal — pause before you trust the offer</title>
+</head>
+<body>
+  <a class="skip-link" href="#checker">Skip to checker</a>
+  <header><a class="brand" href="#top"><span>OS</span> OfferSignal</a><nav aria-label="Primary"><a href="#checker">Check an offer</a><a href="#saved">Saved checks</a><span class="local-pill">● Local only</span></nav></header>
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy"><p class="eyebrow">Private job-offer screening</p><h1>Good news can still deserve a second look.</h1><p>Paste a recruiter message. OfferSignal highlights patterns worth verifying and turns them into a calm, practical next-step checklist.</p><div class="hero-actions"><a class="button primary" href="#checker">Check a message</a><button id="sample-button" class="button ghost">Try a safe sample</button></div><p class="fine">Your message never leaves this device. No account, AI service, or upload.</p></div>
+      <aside class="signal-card"><div class="signal-orbit"><span></span><span></span><span></span><strong>?</strong></div><p>OfferSignal does not declare a message “safe” or “a scam.” It helps you verify before sharing money or information.</p></aside>
+    </section>
+
+    <section class="proof-strip" aria-label="Why this matters"><div><strong>1M+</strong><span>imposter-scam reports to the FTC in 2025</span></div><div><strong>$3.5B</strong><span>reported imposter-scam losses in 2025</span></div><div><strong>Local</strong><span>analysis with no message upload</span></div></section>
+
+    <section class="checker" id="checker">
+      <form id="offer-form" class="input-panel" novalidate>
+        <div class="panel-head"><div><p class="step">01 · Context</p><h2>What reached you?</h2></div><button class="link-button" type="reset">Clear</button></div>
+        <div id="form-error" class="error" role="alert" hidden></div>
+        <div class="fields">
+          <label>Role or company<input name="label" maxlength="70" required placeholder="Remote data assistant — Northstar"></label>
+          <div class="two-col"><label>How they contacted you<select name="channel"><option value="email">Email</option><option value="text">Text message</option><option value="whatsapp">WhatsApp / Telegram</option><option value="social">Social media</option><option value="jobboard">Job board</option><option value="other">Other</option></select></label><label>Sender email (optional)<input name="senderEmail" type="email" placeholder="recruiter@example.com"></label></div>
+          <label>Recruiter message<textarea name="message" minlength="20" maxlength="10000" required placeholder="Paste the message, offer, or instructions here…"></textarea><small>Before pasting, remove ID numbers, bank details, addresses, and passwords.</small></label>
+          <fieldset><legend>What has happened so far?</legend><label class="check"><input type="checkbox" name="applied"><span>I applied for this role</span></label><label class="check"><input type="checkbox" name="interviewed"><span>I had a real-time interview</span></label><label class="check"><input type="checkbox" name="verified"><span>I independently found the role on the company’s official careers site</span></label></fieldset>
+        </div>
+        <button class="button primary full" type="submit">Review the signals</button>
+      </form>
+
+      <section class="output-panel" aria-live="polite">
+        <div id="empty-output" class="empty"><div class="empty-bars" aria-hidden="true"><i></i><i></i><i></i></div><h2>A second look starts here</h2><p>OfferSignal checks for common pressure, payment, identity, and process patterns—entirely in your browser.</p></div>
+        <div id="output" hidden>
+          <div class="result-head"><div><p class="step">02 · Signals</p><h2 id="result-name"></h2></div><span id="result-tier" class="tier"></span></div>
+          <p id="result-summary" class="summary"></p>
+          <div class="score-wrap"><div class="score-track"><span id="score-bar"></span></div><div class="score-labels"><span>Fewer matched signals</span><span>More matched signals</span></div></div>
+          <div class="not-verdict"><strong>This is not a verdict.</strong> A low score does not prove legitimacy, and a high score does not prove fraud. Verify independently.</div>
+          <h3>Patterns to review</h3><div id="findings" class="findings"></div>
+          <h3>Your safest next steps</h3><ol id="actions" class="actions"></ol>
+          <div class="result-actions"><button id="save-check" class="button primary">Save locally</button><button id="copy-checklist" class="button ghost">Copy checklist</button></div>
+        </div>
+      </section>
+    </section>
+
+    <section class="saved" id="saved"><div class="panel-head"><div><p class="step">03 · History</p><h2>Saved checks</h2></div><div><button id="export-checks" class="link-button">Export</button><button id="clear-checks" class="link-button danger">Delete all</button></div></div><div id="saved-list" class="saved-list"></div></section>
+
+    <section class="verify-guide"><div><p class="step">Independent verification</p><h2>Leave the message to check the message.</h2></div><ol><li><span>01</span>Type the company address into your browser yourself.</li><li><span>02</span>Find its careers page and main phone number independently.</li><li><span>03</span>Ask the company to confirm the role and recruiter.</li><li><span>04</span>Never pay to get paid or deposit a check to buy equipment.</li></ol></section>
+
+    <section class="sources"><p>Built from public fraud-prevention guidance, including recent FTC data showing imposter scams remained the most reported scam type in 2025.</p><a href="https://consumer.ftc.gov/consumer-alerts/2026/05/new-trends-reports-imposter-scams" target="_blank" rel="noreferrer">FTC 2026 imposter trends ↗</a><a href="https://consumer.ftc.gov/consumer-alerts/2025/07/job-scammers-are-looking-hire-you" target="_blank" rel="noreferrer">FTC job-scam guidance ↗</a><a href="https://www.ic3.gov/AnnualReport/Reports/2025_IC3Report.pdf" target="_blank" rel="noreferrer">FBI IC3 2025 report ↗</a></section>
+  </main>
+  <footer><span>OfferSignal · 2026-W36</span><span>Pattern checker, not an identity-verification service</span></footer>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
+</body></html>

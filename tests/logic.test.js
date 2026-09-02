@@ -1,0 +1,7 @@
+import test from'node:test';import assert from'node:assert/strict';import{analyzeOffer,safeParse}from'../logic.js';
+const base={label:'Role',channel:'email',senderEmail:'recruiter@company.example',message:'Thank you for applying. We would like to schedule a video interview to discuss the role and your experience.',applied:true,interviewed:false,verified:true};
+test('normal interview invitation matches few signals',()=>{const r=analyzeOffer(base);assert.equal(r.level,'low');assert.equal(r.matches.length,1);});
+test('task scam language yields high concern',()=>{const r=analyzeOffer({...base,channel:'whatsapp',applied:false,verified:false,message:'Complete product optimization task sets. Recharge your account using USDT to unlock commission. Act immediately.'});assert.equal(r.level,'high');assert.ok(r.matches.some(x=>x.id==='pay'));assert.ok(r.matches.some(x=>x.id==='crypto'));});
+test('fake check equipment pattern creates payment action',()=>{const r=analyzeOffer({...base,message:'We will send a check for equipment. Deposit the check, purchase equipment from our preferred vendor, and refund the difference.'});assert.ok(r.matches.some(x=>x.id==='check'));assert.match(r.actions[0],/Do not pay|Stop sharing/);});
+test('message and label validation are helpful',()=>assert.throws(()=>analyzeOffer({...base,label:'',message:'short'}),/label/i));
+test('corrupt storage is safely ignored',()=>assert.deepEqual(safeParse('nope'),[]));
