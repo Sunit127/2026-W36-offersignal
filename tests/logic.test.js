@@ -5,3 +5,6 @@ test('task scam language yields high concern',()=>{const r=analyzeOffer({...base
 test('fake check equipment pattern creates payment action',()=>{const r=analyzeOffer({...base,message:'We will send a check for equipment. Deposit the check, purchase equipment from our preferred vendor, and refund the difference.'});assert.ok(r.matches.some(x=>x.id==='check'));assert.match(r.actions[0],/Do not pay|Stop sharing/);});
 test('message and label validation are helpful',()=>assert.throws(()=>analyzeOffer({...base,label:'',message:'short'}),/label/i));
 test('corrupt storage is safely ignored',()=>assert.deepEqual(safeParse('nope'),[]));
+test('malformed saved entries are ignored',()=>assert.deepEqual(safeParse('[null,{\"label\":\"incomplete\"}]'),[]));
+test('sender email and channel validation are enforced',()=>{assert.throws(()=>analyzeOffer({...base,senderEmail:'not-an-email'}),/valid sender email/i);assert.throws(()=>analyzeOffer({...base,channel:'carrier-pigeon'}),/contacted you/i);});
+test('message size limit is enforced',()=>assert.throws(()=>analyzeOffer({...base,message:'x'.repeat(10001)}),/10,000/));
