@@ -3,7 +3,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { DatabaseSync } from "node:sqlite";
 import { randomUUID } from "node:crypto";
 
-const DB_PATH = process.env.OFFERSIGNAL_DB_PATH || "backend/offersignal.sqlite";
+const DB_PATH = process.env.OFFERSIGNAL_DB_PATH || "offersignal.sqlite";
 const MAX_BODY = 64 * 1024;
 const RATE_LIMIT = Math.max(1, Number(process.env.OFFERSIGNAL_RATE_LIMIT || 60));
 const WINDOW_MS = 60_000;
