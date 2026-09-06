@@ -74,3 +74,16 @@ A local-first PWA is appropriate because job messages can contain sensitive pers
 ## Responsible production path
 
 Have fraud-prevention specialists review rules and wording; publish a versioned evidence map and update cadence; localize patterns and official reporting paths; test with job seekers and career counselors; add optional on-device multilingual models only after privacy and bias evaluation; conduct accessibility and threat-model reviews; and deploy over HTTPS with a strict Content Security Policy.
+
+## Optional privacy-preserving backend
+
+The default client never uploads the pasted message. When a user explicitly opts in, the TypeScript/Node service in `backend/` stores only the label, channel, score, matched-pattern summaries, and next-step checklist in SQLite; raw message fields are rejected server-side.
+
+```bash
+cd backend
+npm install
+npm test
+OFFERSIGNAL_CORS_ORIGIN=http://localhost:8080 npm start
+```
+
+Set `window.OFFERSIGNAL_API_BASE` in a deployment wrapper to enable “Save result to team.” Without it, the app remains local-only. The API requires Node 22.5+ for `node:sqlite`, exposes `GET /healthz`, `POST /api/v1/checks`, and `GET /api/v1/checks/:id`, and applies body limits, validation, rate limiting, CORS, and security headers. It stores no raw job-message text by default.
