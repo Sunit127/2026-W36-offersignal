@@ -1,0 +1,8 @@
+{
+  "name":"offersignal-api",
+  "private":true,
+  "type":"module",
+  "engines":{"node":">=22.5"},
+  "scripts":{"dev":"tsx src/server.ts","start":"tsx src/server.ts","test":"node --import tsx --test test/server.test.ts"},
+  "dependencies":{"tsx":"^4.19.2","typescript":"^5.7.2","@types/node":"^22.10.5"}
+}

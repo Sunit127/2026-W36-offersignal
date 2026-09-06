@@ -1,0 +1,19 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+// Node 22.5+ is required for node:sqlite.
+// @ts-ignore
+import { DatabaseSync } from "node:sqlite";
+import { createServerForDb, migrate } from "../src/server.ts";
+
+test("health and privacy-preserving create/fetch", async (t) => {
+  const db=new DatabaseSync(":memory:"); migrate(db);
+  const server=createServerForDb(db); await new Promise<void>(resolve=>server.listen(0,"127.0.0.1",()=>resolve()));
+  t.after(()=>server.close());
+  const address=server.address(); const base=`http://127.0.0.1:${address.port}`;
+  const health=await fetch(`${base}/healthz`); assert.equal(health.status,200); assert.equal((await health.json()).status,"ok");
+  const payload={label:"Remote role",channel:"email",score:12,level:"low",matches:[],actions:["Verify the employer independently."]};
+  const created=await fetch(`${base}/api/v1/checks`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload)});
+  assert.equal(created.status,201); const saved=await created.json(); assert.equal(saved.check.label,"Remote role");
+  const fetched=await fetch(`${base}/api/v1/checks/${saved.id}`); assert.equal(fetched.status,200); assert.equal((await fetched.json()).check.score,12);
+  const raw=await fetch(`${base}/api/v1/checks`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...payload,message:"never"})}); assert.equal(raw.status,400);
+});
