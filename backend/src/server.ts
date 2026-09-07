@@ -4,6 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import { randomUUID } from "node:crypto";
 
 const DB_PATH = process.env.OFFERSIGNAL_DB_PATH || "offersignal.sqlite";
+const IS_TEST = process.env.NODE_ENV === "test";
 const MAX_BODY = 64 * 1024;
 const RATE_LIMIT = Math.max(1, Number(process.env.OFFERSIGNAL_RATE_LIMIT || 60));
 const WINDOW_MS = 60_000;
@@ -56,5 +57,5 @@ export function createServerForDb(db: any) {
     return send(res,404,{error:"not_found"});
   });
 }
-export const app = createServerForDb(openDatabase());
-if (process.env.NODE_ENV !== "test") { const port=Number(process.env.PORT||8787); app.listen(port,"127.0.0.1",()=>console.log(`OfferSignal API listening on http://127.0.0.1:${port}`)); }
+export const app = createServerForDb(openDatabase(IS_TEST ? ":memory:" : DB_PATH));
+if (!IS_TEST) { const port=Number(process.env.PORT||8787); app.listen(port,"127.0.0.1",()=>console.log(`OfferSignal API listening on http://127.0.0.1:${port}`)); }

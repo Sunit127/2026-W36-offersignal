@@ -8,7 +8,10 @@ import { createServerForDb, migrate } from "../src/server.ts";
 test("health and privacy-preserving create/fetch", async (t) => {
   const db=new DatabaseSync(":memory:"); migrate(db);
   const server=createServerForDb(db); await new Promise<void>(resolve=>server.listen(0,"127.0.0.1",()=>resolve()));
-  t.after(()=>server.close());
+  t.after(async ()=>{
+    await new Promise<void>((resolve, reject)=>server.close((error)=> error ? reject(error): resolve()));
+    db.close();
+  });
   const address=server.address(); const base=`http://127.0.0.1:${address.port}`;
   const health=await fetch(`${base}/healthz`); assert.equal(health.status,200); assert.equal((await health.json()).status,"ok");
   const payload={label:"Remote role",channel:"email",score:12,level:"low",matches:[],actions:["Verify the employer independently."]};
