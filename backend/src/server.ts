@@ -1,5 +1,9 @@
 // @ts-nocheck
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import {
+  createServer,
+  type IncomingMessage,
+  type ServerResponse,
+} from "node:http";
 import { DatabaseSync } from "node:sqlite";
 import { randomUUID } from "node:crypto";
 
@@ -13,10 +17,21 @@ const hits = new Map<string, number[]>();
 
 export function migrate(db: any) {
   db.exec("PRAGMA journal_mode=WAL");
-  db.exec("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)");
+  db.exec(
+    "CREATE TABLE IF NOT EXISTS schema_migrations " +
+      "(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)",
+  );
   if (!db.prepare("SELECT version FROM schema_migrations WHERE version=1").get()) {
-    db.exec("CREATE TABLE checks (id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL)");
-    db.prepare("INSERT INTO schema_migrations(version, applied_at) VALUES(1, ?)").run(new Date().toISOString());
+    db.exec(`
+      CREATE TABLE checks (
+        id TEXT PRIMARY KEY,
+        payload TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    `);
+    db.prepare(
+      "INSERT INTO schema_migrations(version, applied_at) VALUES(1, ?)",
+    ).run(new Date().toISOString());
   }
 }
 
@@ -50,7 +65,9 @@ function sendJsonResponse(
 
 function isRateLimited(ip: string) {
   const now = Date.now();
-  const prior = (hits.get(ip) || []).filter((timestamp) => now - timestamp < WINDOW_MS);
+  const prior = (hits.get(ip) || []).filter(
+    (timestamp) => now - timestamp < WINDOW_MS,
+  );
   if (prior.length >= RATE_LIMIT) {
     // Reject rapid bursts before parsing body or touching disk.
     return true;
@@ -92,7 +109,11 @@ function validateInput(input: any) {
     throw new Error("label must be 1-70 characters");
   }
 
-  if (!["email", "text", "whatsapp", "social", "jobboard", "other"].includes(input.channel)) {
+  if (
+    !["email", "text", "whatsapp", "social", "jobboard", "other"].includes(
+      input.channel,
+    )
+  ) {
     throw new Error("invalid channel");
   }
 
@@ -104,18 +125,28 @@ function validateInput(input: any) {
     throw new Error("invalid level");
   }
 
-  if (!Array.isArray(input.matches) || input.matches.length > 20 || !input.matches.every((entry: any) => {
-    return (
-      entry &&
-      typeof entry.id === "string" &&
-      typeof entry.title === "string" &&
-      typeof entry.why === "string"
-    );
-  })) {
+  if (
+    !Array.isArray(input.matches)
+    || input.matches.length > 20
+    || !input.matches.every((entry: any) => {
+      return (
+        entry &&
+        typeof entry.id === "string" &&
+        typeof entry.title === "string" &&
+        typeof entry.why === "string"
+      );
+    })
+  ) {
     throw new Error("invalid matches");
   }
 
-  if (!Array.isArray(input.actions) || input.actions.length > 20 || !input.actions.every((value: any) => typeof value === "string" && value.length <= 400)) {
+  if (
+    !Array.isArray(input.actions)
+    || input.actions.length > 20
+    || !input.actions.every((value: any) => {
+      return typeof value === "string" && value.length <= 400;
+    })
+  ) {
     throw new Error("invalid actions");
   }
 
@@ -150,7 +181,12 @@ export function createServerForDb(db: any) {
     }
 
     if (isRateLimited(ip)) {
-      return sendJsonResponse(res, 429, { error: "rate_limit_exceeded" }, { "Retry-After": "60" });
+      return sendJsonResponse(
+        res,
+        429,
+        { error: "rate_limit_exceeded" },
+        { "Retry-After": "60" },
+      );
     }
 
     if (req.url === "/healthz" && req.method === "GET") {
@@ -162,7 +198,9 @@ export function createServerForDb(db: any) {
         const check = validateInput(await readRequestBody(req));
         const checkId = randomUUID();
         const createdAt = new Date().toISOString();
-        db.prepare("INSERT INTO checks(id,payload,created_at) VALUES(?,?,?)").run(
+        db.prepare(
+          "INSERT INTO checks(id,payload,created_at) VALUES(?,?,?)",
+        ).run(
           checkId,
           JSON.stringify(check),
           createdAt,
@@ -176,7 +214,9 @@ export function createServerForDb(db: any) {
 
     const checkIdMatch = req.url?.match(/^\/api\/v1\/checks\/([0-9a-f-]{36})$/);
     if (checkIdMatch && req.method === "GET") {
-      const row = db.prepare("SELECT payload,created_at FROM checks WHERE id=?").get(checkIdMatch[1]);
+      const row = db.prepare(
+        "SELECT payload,created_at FROM checks WHERE id=?",
+      ).get(checkIdMatch[1]);
       if (!row) {
         return sendJsonResponse(res, 404, { error: "check_not_found" });
       }
