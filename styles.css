@@ -44,7 +44,7 @@ body::before
   content:"";
   position:fixed;
   inset:0;
-  z-index:-3;
+  z-index:0;
   background:
     radial-gradient(circle at 20% 8%, rgba(191,241,216,.3), transparent 36%),
     url("assets/offersignal-bg.svg") center -130px/1900px auto no-repeat;
@@ -57,7 +57,7 @@ body::after
   content:"";
   position:fixed;
   inset:0;
-  z-index:-2;
+  z-index:1;
   background:
     radial-gradient(1200px 220px at 12% 18%,rgba(89,69,216,.14),transparent),
     radial-gradient(900px 200px at 80% 92%,rgba(255,204,170,.16),transparent);
