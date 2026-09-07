@@ -10,6 +10,10 @@
   --bg:#f5f3ee;
   --muted:#696478;
   --line:#ddd9e2;
+  --scene-depth:1200px;
+  --scene-glow:rgba(89,69,216,.14);
+  --float-distance:16px;
+  --panel-shadow:0 22px 60px rgba(32,26,52,.11);
   font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   color:var(--ink);
   background:var(--bg);
@@ -26,9 +30,43 @@ html
 body
 {
   margin:0;
+  position:relative;
   min-width:320px;
   line-height:1.5;
-  background:radial-gradient(circle at 84% 4%,#e3ddff 0,transparent 24rem),var(--bg)
+  background:radial-gradient(circle at 84% 4%,#e3ddff 0,transparent 24rem),var(--bg);
+  perspective:var(--scene-depth);
+  transform-style:preserve-3d;
+  perspective-origin:center top;
+  overflow-x:hidden
+}
+body::before
+{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-3;
+  background:
+    radial-gradient(circle at 20% 8%, rgba(191,241,216,.3), transparent 36%),
+    url("assets/offersignal-bg.svg") center -130px/1900px auto no-repeat;
+  pointer-events:none;
+  opacity:.66;
+  animation:offersignal-grid 56s linear infinite;
+}
+body::after
+{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-2;
+  background:
+    radial-gradient(1200px 220px at 12% 18%,rgba(89,69,216,.14),transparent),
+    radial-gradient(900px 200px at 80% 92%,rgba(255,204,170,.16),transparent);
+  pointer-events:none
+}
+main
+{
+  position:relative;
+  z-index:1
 }
 button,input,textarea,select
 {
@@ -199,7 +237,10 @@ main
   border-radius:28px;
   padding:35px;
   text-align:center;
-  box-shadow:0 28px 70px rgba(32,26,52,.22)
+  box-shadow:var(--panel-shadow);
+  --tilt-base-transform:rotate(-0.4deg);
+  transform-style:preserve-3d;
+  animation:signal-pulse 8.5s ease-in-out infinite
 }
 .signal-card p
 {
@@ -216,6 +257,15 @@ main
   position:relative;
   display:grid;
   place-items:center
+}
+.signal-orbit::before
+{
+  content:"";
+  position:absolute;
+  inset:24px;
+  border:1px dashed rgba(255,255,255,.19);
+  border-radius:50%;
+  animation:signal-orbit 7.5s linear infinite
 }
 .signal-orbit:before
 {
@@ -264,6 +314,60 @@ main
   display:grid;
   grid-template-columns:repeat(3,1fr);
   margin:0 0 24px
+}
+[data-tilt]
+{
+  --tilt-base-transform:rotate(0deg);
+  --tilt-rotate-x:0deg;
+  --tilt-rotate-y:0deg;
+  --tilt-translate-z:0px;
+  --tilt-scale:1;
+  transform:
+    var(--tilt-base-transform)
+    rotateX(var(--tilt-rotate-x))
+    rotateY(var(--tilt-rotate-y))
+    translateZ(var(--tilt-translate-z))
+    scale(var(--tilt-scale));
+  transform-style:preserve-3d;
+  transition:
+    transform .17s ease,
+    box-shadow .24s ease;
+  will-change:transform;
+  backface-visibility:hidden
+}
+.input-panel
+{
+  --tilt-base-transform:translateZ(5px);
+  animation:signal-tilt 6.8s ease-in-out infinite alternate
+}
+.output-panel
+{
+  --tilt-base-transform:translateZ(7px);
+  position:sticky;
+  top:16px;
+  min-height:670px
+}
+.saved
+{
+  --tilt-base-transform:translateZ(0)
+}
+.proof-strip
+{
+  animation:signal-stripe 7.5s ease-in-out infinite
+}
+.saved-card
+{
+  --tilt-base-transform:translateZ(2px);
+  transition:
+    transform .22s cubic-bezier(.19,.96,.36,1),
+    box-shadow .2s
+}
+.saved-card:hover,
+.signal-card:hover,
+.input-panel:hover,
+.output-panel:hover
+{
+  box-shadow:0 34px 70px rgba(32,26,52,.22)
 }
 .proof-strip div
 {
@@ -699,6 +803,103 @@ footer
 {
   transform:none;
   opacity:1
+}
+@keyframes offersignal-grid
+{
+  0%
+  {
+    transform:translateX(0) translateY(0) scale(1)
+  }
+  50%
+  {
+    transform:translateX(-8px) translateY(-6px) scale(1.03)
+  }
+  100%
+  {
+    transform:translateX(0) translateY(0) scale(1)
+  }
+}
+@keyframes signal-pulse
+{
+  0%
+  {
+    transform:var(--tilt-base-transform) translateY(0px)
+  }
+  45%
+  {
+    transform:var(--tilt-base-transform) translateY(calc(var(--float-distance) * -0.35))
+  }
+  100%
+  {
+    transform:var(--tilt-base-transform) translateY(calc(var(--float-distance) * -0.1))
+  }
+}
+@keyframes signal-tilt
+{
+  0%
+  {
+    transform:var(--tilt-base-transform) rotateX(0deg)
+  }
+  50%
+  {
+    transform:var(--tilt-base-transform) rotateX(.8deg)
+  }
+  100%
+  {
+    transform:var(--tilt-base-transform) rotateX(-.3deg)
+  }
+}
+@keyframes signal-stripe
+{
+  0%
+  {
+    transform:translateY(0px)
+  }
+  50%
+  {
+    transform:translateY(-6px)
+  }
+  100%
+  {
+    transform:translateY(0px)
+  }
+}
+@keyframes signal-orbit
+{
+  from
+  {
+    transform:rotate(0deg)
+  }
+  to
+  {
+    transform:rotate(360deg)
+  }
+}
+@media(prefers-reduced-motion:reduce)
+{
+  *:where(::before,::after,::selection)
+  {
+    transition:none!important;
+    animation:none!important
+  }
+  [data-tilt]
+  {
+    transition:none!important;
+    transform:var(--tilt-base-transform)!important
+  }
+  .signal-card,
+  .signal-orbit::before,
+  .input-panel,
+  .proof-strip,
+  .output-panel,
+  .saved
+  {
+    animation:none!important
+  }
+  body
+  {
+    perspective:none
+  }
 }
 @media(max-width:870px)
 {

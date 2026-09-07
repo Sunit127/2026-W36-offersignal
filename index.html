@@ -10,13 +10,13 @@
   <main id="top">
     <section class="hero">
       <div class="hero-copy"><p class="eyebrow">Private job-offer screening</p><h1>Good news can still deserve a second look.</h1><p>Paste a recruiter message. OfferSignal highlights patterns worth verifying and turns them into a calm, practical next-step checklist.</p><div class="hero-actions"><a class="button primary" href="#checker">Check a message</a><button id="sample-button" class="button ghost">Try a safe sample</button></div><p class="fine">Your message never leaves this device. No account, AI service, or upload.</p></div>
-      <aside class="signal-card"><div class="signal-orbit"><span></span><span></span><span></span><strong>?</strong></div><p>OfferSignal does not declare a message “safe” or “a scam.” It helps you verify before sharing money or information.</p></aside>
+      <aside class="signal-card" data-depth="1.1" data-tilt><div class="signal-orbit"><span></span><span></span><span></span><strong>?</strong></div><p>OfferSignal does not declare a message “safe” or “a scam.” It helps you verify before sharing money or information.</p></aside>
     </section>
 
     <section class="proof-strip" aria-label="Why this matters"><div><strong>1M+</strong><span>imposter-scam reports to the FTC in 2025</span></div><div><strong>$3.5B</strong><span>reported imposter-scam losses in 2025</span></div><div><strong>Local</strong><span>analysis with no message upload</span></div></section>
 
-    <section class="checker" id="checker">
-      <form id="offer-form" class="input-panel" novalidate>
+      <section class="checker" id="checker">
+      <form id="offer-form" class="input-panel" novalidate data-depth="1.15" data-tilt>
         <div class="panel-head"><div><p class="step">01 · Context</p><h2>What reached you?</h2></div><button class="link-button" type="reset">Clear</button></div>
         <div id="form-error" class="error" role="alert" hidden></div>
         <div class="fields">
@@ -28,7 +28,7 @@
         <button class="button primary full" type="submit">Review the signals</button>
       </form>
 
-      <section class="output-panel" aria-live="polite">
+      <section class="output-panel" aria-live="polite" data-depth="1.0" data-tilt>
         <div id="empty-output" class="empty"><div class="empty-bars" aria-hidden="true"><i></i><i></i><i></i></div><h2>A second look starts here</h2><p>OfferSignal checks for common pressure, payment, identity, and process patterns—entirely in your browser.</p></div>
         <div id="output" hidden>
           <div class="result-head"><div><p class="step">02 · Signals</p><h2 id="result-name"></h2></div><span id="result-tier" class="tier"></span></div>
@@ -42,7 +42,7 @@
       </section>
     </section>
 
-    <section class="saved" id="saved"><div class="panel-head"><div><p class="step">03 · History</p><h2>Saved checks</h2></div><div><button id="export-checks" class="link-button">Export</button><button id="clear-checks" class="link-button danger">Delete all</button></div></div><div id="saved-list" class="saved-list"></div></section>
+    <section class="saved" id="saved" data-depth="0.7" data-tilt><div class="panel-head"><div><p class="step">03 · History</p><h2>Saved checks</h2></div><div><button id="export-checks" class="link-button">Export</button><button id="clear-checks" class="link-button danger">Delete all</button></div></div><div id="saved-list" class="saved-list"></div></section>
 
     <section class="verify-guide"><div><p class="step">Independent verification</p><h2>Leave the message to check the message.</h2></div><ol><li><span>01</span>Type the company address into your browser yourself.</li><li><span>02</span>Find its careers page and main phone number independently.</li><li><span>03</span>Ask the company to confirm the role and recruiter.</li><li><span>04</span>Never pay to get paid or deposit a check to buy equipment.</li></ol></section>
 
