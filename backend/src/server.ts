@@ -15,6 +15,28 @@ const WINDOW_MS = 60_000;
 const ALLOWED_ORIGIN = process.env.OFFERSIGNAL_CORS_ORIGIN || "http://localhost:8080";
 const hits = new Map<string, number[]>();
 
+function configuredRetentionSeconds() {
+  const configured = Number.parseInt(
+    process.env.OFFERSIGNAL_RETENTION_SECONDS || String(30 * 24 * 60 * 60),
+    10,
+  );
+  const value = Number.isFinite(configured) ? configured : 30 * 24 * 60 * 60;
+  return Math.max(300, Math.min(value, 365 * 24 * 60 * 60));
+}
+
+const RETENTION_SECONDS = configuredRetentionSeconds();
+
+function expiryFor(createdAt: string) {
+  const created = Date.parse(createdAt);
+  const base = Number.isFinite(created) ? created : Date.now();
+  return new Date(base + RETENTION_SECONDS * 1000).toISOString();
+}
+
+function purgeExpired(db: any) {
+  db.prepare("DELETE FROM checks WHERE expires_at IS NOT NULL AND expires_at <= ?")
+    .run(new Date().toISOString());
+}
+
 export function migrate(db: any) {
   db.exec("PRAGMA journal_mode=WAL");
   db.exec(
@@ -26,13 +48,28 @@ export function migrate(db: any) {
       CREATE TABLE checks (
         id TEXT PRIMARY KEY,
         payload TEXT NOT NULL,
-        created_at TEXT NOT NULL
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL
       )
     `);
     db.prepare(
       "INSERT INTO schema_migrations(version, applied_at) VALUES(1, ?)",
     ).run(new Date().toISOString());
   }
+
+  const columns = db.prepare("PRAGMA table_info(checks)").all();
+  if (!columns.some((column: any) => column.name === "expires_at")) {
+    db.exec("ALTER TABLE checks ADD COLUMN expires_at TEXT");
+  }
+
+  const legacyRows = db.prepare(
+    "SELECT id,created_at FROM checks WHERE expires_at IS NULL",
+  ).all();
+  for (const row of legacyRows) {
+    db.prepare("UPDATE checks SET expires_at=? WHERE id=?")
+      .run(expiryFor(row.created_at), row.id);
+  }
+  purgeExpired(db);
 }
 
 export function openDatabase(path = DB_PATH) {
@@ -198,14 +235,22 @@ export function createServerForDb(db: any) {
         const check = validateInput(await readRequestBody(req));
         const checkId = randomUUID();
         const createdAt = new Date().toISOString();
+        const expiresAt = expiryFor(createdAt);
+        purgeExpired(db);
         db.prepare(
-          "INSERT INTO checks(id,payload,created_at) VALUES(?,?,?)",
+          "INSERT INTO checks(id,payload,created_at,expires_at) VALUES(?,?,?,?)",
         ).run(
           checkId,
           JSON.stringify(check),
           createdAt,
+          expiresAt,
         );
-        return sendJsonResponse(res, 201, { id: checkId, createdAt, check });
+        return sendJsonResponse(res, 201, {
+          id: checkId,
+          createdAt,
+          expiresAt,
+          check,
+        });
       } catch (error: any) {
         const statusCode = error.message === "body-too-large" ? 413 : 400;
         return sendJsonResponse(res, statusCode, { error: error.message });
@@ -214,15 +259,18 @@ export function createServerForDb(db: any) {
 
     const checkIdMatch = req.url?.match(/^\/api\/v1\/checks\/([0-9a-f-]{36})$/);
     if (checkIdMatch && req.method === "GET") {
+      purgeExpired(db);
       const row = db.prepare(
-        "SELECT payload,created_at FROM checks WHERE id=?",
-      ).get(checkIdMatch[1]);
+        "SELECT payload,created_at,expires_at FROM checks "
+        + "WHERE id=? AND expires_at > ?",
+      ).get(checkIdMatch[1], new Date().toISOString());
       if (!row) {
         return sendJsonResponse(res, 404, { error: "check_not_found" });
       }
       return sendJsonResponse(res, 200, {
         id: checkIdMatch[1],
         createdAt: row.created_at,
+        expiresAt: row.expires_at,
         check: JSON.parse(row.payload),
       });
     }

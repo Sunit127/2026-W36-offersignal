@@ -56,6 +56,7 @@ test("health and privacy-preserving create/fetch", async (t) => {
 
   const saved = await created.json();
   assert.equal(saved.check.label, "Remote role");
+  assert.ok(saved.expiresAt > saved.createdAt);
 
   const fetched = await fetch(`${base}/api/v1/checks/${saved.id}`);
   assert.equal(fetched.status, 200);
@@ -68,4 +69,16 @@ test("health and privacy-preserving create/fetch", async (t) => {
     body: JSON.stringify({ ...payload, message: "never" }),
   });
   assert.equal(raw.status, 400);
+
+  const expiredId = "00000000-0000-4000-8000-000000000001";
+  db.prepare(
+    "INSERT INTO checks(id,payload,created_at,expires_at) VALUES(?,?,?,?)",
+  ).run(
+    expiredId,
+    JSON.stringify(payload),
+    "2020-01-01T00:00:00.000Z",
+    "2020-01-02T00:00:00.000Z",
+  );
+  const expired = await fetch(`${base}/api/v1/checks/${expiredId}`);
+  assert.equal(expired.status, 404);
 });
