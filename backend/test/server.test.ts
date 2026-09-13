@@ -38,6 +38,12 @@ test("health and privacy-preserving create/fetch", async (t) => {
   assert.equal(health.status, 200);
   assert.equal((await health.json()).status, "ok");
 
+  // Liveness probes must remain available even when the API quota is exhausted.
+  const probes = await Promise.all(
+    Array.from({ length: 65 }, () => fetch(base + "/healthz")),
+  );
+  assert.ok(probes.every((response) => response.status === 200));
+
   const payload = {
     label: "Remote role",
     channel: "email",
