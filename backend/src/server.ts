@@ -10,7 +10,18 @@ import { randomUUID } from "node:crypto";
 const DB_PATH = process.env.OFFERSIGNAL_DB_PATH || "offersignal.sqlite";
 const IS_TEST = process.env.NODE_ENV === "test";
 const MAX_BODY = 64 * 1024; // Maximum accepted payload size in bytes.
-const RATE_LIMIT = Math.max(1, Number(process.env.OFFERSIGNAL_RATE_LIMIT || 60));
+
+function configuredRateLimit() {
+  // Invalid configuration must fall back to a bounded quota, never NaN.
+  const configured = Number.parseInt(
+    process.env.OFFERSIGNAL_RATE_LIMIT || "60",
+    10,
+  );
+  const value = Number.isFinite(configured) ? configured : 60;
+  return Math.max(1, Math.min(value, 1_000));
+}
+
+const RATE_LIMIT = configuredRateLimit();
 const WINDOW_MS = 60_000;
 const ALLOWED_ORIGIN = process.env.OFFERSIGNAL_CORS_ORIGIN || "http://localhost:8080";
 const hits = new Map<string, number[]>();
@@ -217,7 +228,9 @@ export function createServerForDb(db: any) {
       return res.end();
     }
 
-    if (isRateLimited(ip)) {
+    // Keep CORS preflights and liveness probes available under API load.
+    const shouldLimit = req.method !== "OPTIONS" && req.url !== "/healthz";
+    if (shouldLimit && isRateLimited(ip)) {
       return sendJsonResponse(
         res,
         429,
