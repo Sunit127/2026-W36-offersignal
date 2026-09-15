@@ -230,7 +230,7 @@ export function createServerForDb(db: any) {
       // CORS preflight should always be answered quickly.
       res.writeHead(204, {
         "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
       });
       return res.end();
