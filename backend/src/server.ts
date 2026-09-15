@@ -153,6 +153,14 @@ function validateInput(input: any) {
     throw new Error("Raw message text is never accepted by this service");
   }
 
+  // Reject unknown keys so future client changes cannot silently broaden the
+  // privacy contract or persist data that was not explicitly reviewed.
+  const allowedKeys = new Set(["label", "channel", "score", "level", "matches", "actions"]);
+  const unknownKey = Object.keys(input).find((key) => !allowedKeys.has(key));
+  if (unknownKey) {
+    throw new Error(`unknown field: ${unknownKey}`);
+  }
+
   if (typeof input.label !== "string" || input.label.trim().length < 1 || input.label.trim().length > 70) {
     throw new Error("label must be 1-70 characters");
   }
