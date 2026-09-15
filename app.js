@@ -212,7 +212,17 @@ async function shareCheck() {
   button.disabled = true;
 
   try {
-    const { message, ...privacySafe } = currentResult;
+    // Keep the opt-in API payload intentionally minimal: no raw message,
+    // sender address, or UI-only fields ever leave this device.
+    const {
+      label,
+      channel,
+      score,
+      level,
+      matches,
+      actions,
+    } = currentResult;
+    const privacySafe = { label, channel, score, level, matches, actions };
     const response = await fetch(`${API_BASE.replace(/\/$/, '')}/api/v1/checks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
