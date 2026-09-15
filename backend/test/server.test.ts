@@ -76,6 +76,14 @@ test("health and privacy-preserving create/fetch", async (t) => {
   });
   assert.equal(raw.status, 400);
 
+  // Unknown fields must fail closed so the privacy contract cannot broaden silently.
+  const unknown = await fetch(`${base}/api/v1/checks`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ...payload, senderEmail: "recruiter@example.com" }),
+  });
+  assert.equal(unknown.status, 400);
+
   const expiredId = "00000000-0000-4000-8000-000000000001";
   db.prepare(
     "INSERT INTO checks(id,payload,created_at,expires_at) VALUES(?,?,?,?)",
