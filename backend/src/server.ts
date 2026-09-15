@@ -253,7 +253,7 @@ export function createServerForDb(db: any) {
 
     if (req.url === "/api/v1/checks" && req.method === "POST") {
       const contentType = req.headers["content-type"] || "";
-      if (!/^application\\/json(?:\\s*;|$)/i.test(contentType)) {
+      if (!/^application\/json(?:\s*;|$)/i.test(contentType)) {
         return sendJsonResponse(res, 415, { error: "content_type_required" });
       }
       try {
