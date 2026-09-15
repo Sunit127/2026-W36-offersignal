@@ -144,12 +144,23 @@ function renderResult(result) {
 }
 
 function savedChecks() {
-  return safeParse(localStorage.getItem(STORAGE_KEY) || '[]');
+  try {
+    return safeParse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch {
+    showToast('Saved checks unavailable');
+    return [];
+  }
 }
 
 function saveChecks(items) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-  renderSavedChecks();
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    renderSavedChecks();
+    return true;
+  } catch {
+    showToast('Could not save: browser storage is unavailable');
+    return false;
+  }
 }
 
 function renderSavedChecks() {

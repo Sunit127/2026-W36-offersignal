@@ -68,6 +68,9 @@ test("health and privacy-preserving create/fetch", async (t) => {
   assert.equal(fetched.status, 200);
   assert.equal((await fetched.json()).check.score, 12);
 
+  const unsupported = await fetch(base + "/api/v1/checks", { method: "POST", body: JSON.stringify(payload) });
+  assert.equal(unsupported.status, 415);
+
   // Raw message text must be rejected to keep saved content private.
   const raw = await fetch(`${base}/api/v1/checks`, {
     method: "POST",

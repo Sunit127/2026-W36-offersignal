@@ -86,4 +86,4 @@ npm test
 OFFERSIGNAL_CORS_ORIGIN=http://localhost:8080 npm start
 ```
 
-Set `window.OFFERSIGNAL_API_BASE` in a deployment wrapper to enable “Save result to team.” Without it, the app remains local-only. The API requires Node 22.5+ for `node:sqlite`, exposes `GET /healthz`, `POST /api/v1/checks`, and `GET /api/v1/checks/:id`, and applies body limits, validation, rate limiting, CORS, and security headers. It stores no raw job-message text by default.
+Set `window.OFFERSIGNAL_API_BASE` in a deployment wrapper to enable “Save result to team.” Without it, the app remains local-only. The API requires Node 22.5+ for `node:sqlite`, exposes `GET /healthz`, `POST /api/v1/checks`, `GET /api/v1/checks/:id`, and `DELETE /api/v1/checks/:id` for explicit retention control, and applies body limits, validation, rate limiting, CORS, and security headers. It stores no raw job-message text by default.

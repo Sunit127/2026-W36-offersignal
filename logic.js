@@ -21,5 +21,29 @@ export function analyzeOffer(input){
   if(matches.some(x=>x.id==='sensitive'))actions.unshift('Stop sharing personal or financial information. If already shared, use IdentityTheft.gov or your country’s official identity-theft service.');
   return {label,message,senderEmail:email,channel,applied:!!input.applied,interviewed:!!input.interviewed,verified:!!input.verified,score,level,...config,matches,actions,createdAt:new Date().toISOString()};
 }
-function isSavedCheck(value){return value&&typeof value==='object'&&typeof value.label==='string'&&typeof value.title==='string'&&typeof value.summary==='string'&&['low','verify','high'].includes(value.level)&&typeof value.message==='string'&&Array.isArray(value.matches)&&Array.isArray(value.actions)&&typeof value.createdAt==='string';}
-export function safeParse(raw){try{const data=JSON.parse(raw);return Array.isArray(data)?data.filter(isSavedCheck):[];}catch{return [];}}
+function isSavedCheck(value) {
+  if (!value || typeof value !== 'object') return false;
+  const text = (key, max) => typeof value[key] === 'string' && value[key].trim().length > 0 && value[key].length <= max;
+  if (!text('label', 70) || !text('title', 120) || !text('summary', 500)) return false;
+  if (!text('message', 10000) || typeof value.senderEmail !== 'string' || value.senderEmail.length > 320) return false;
+  if (!['email', 'text', 'whatsapp', 'social', 'jobboard', 'other'].includes(value.channel)) return false;
+  if (!['low', 'verify', 'high'].includes(value.level) || !Number.isInteger(value.score) || value.score < 0 || value.score > 100) return false;
+  if (typeof value.applied !== 'boolean' || typeof value.interviewed !== 'boolean' || typeof value.verified !== 'boolean') return false;
+  if (!Array.isArray(value.matches) || value.matches.length > 20
+    || !value.matches.every((match) => match && typeof match === 'object'
+      && typeof match.id === 'string' && match.id.length <= 60
+      && typeof match.title === 'string' && match.title.length <= 180
+      && typeof match.why === 'string' && match.why.length <= 500)) return false;
+  if (!Array.isArray(value.actions) || value.actions.length > 20
+    || !value.actions.every((action) => typeof action === 'string' && action.length <= 500)) return false;
+  if (typeof value.createdAt !== 'string' || !Number.isFinite(Date.parse(value.createdAt))) return false;
+  return value.id === undefined || (typeof value.id === 'string' && value.id.length <= 100);
+}
+export function safeParse(raw) {
+  try {
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data.slice(0, 30).filter(isSavedCheck) : [];
+  } catch {
+    return [];
+  }
+}

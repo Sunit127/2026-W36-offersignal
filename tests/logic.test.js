@@ -8,3 +8,15 @@ test('corrupt storage is safely ignored',()=>assert.deepEqual(safeParse('nope'),
 test('malformed saved entries are ignored',()=>assert.deepEqual(safeParse('[null,{\"label\":\"incomplete\"}]'),[]));
 test('sender email and channel validation are enforced',()=>{assert.throws(()=>analyzeOffer({...base,senderEmail:'not-an-email'}),/valid sender email/i);assert.throws(()=>analyzeOffer({...base,channel:'carrier-pigeon'}),/contacted you/i);});
 test('message size limit is enforced',()=>assert.throws(()=>analyzeOffer({...base,message:'x'.repeat(10001)}),/10,000/));
+
+test('saved-check validation rejects malformed nested data and caps history', () => {
+  const valid = {
+    label:'Role', message:'A valid local message with enough detail to review.',
+    senderEmail:'', channel:'email', applied:true, interviewed:false, verified:false,
+    score:20, level:'verify', title:'Verify carefully before proceeding',
+    summary:'Several patterns deserve confirmation.', matches:[],
+    actions:['Verify independently.'], createdAt:new Date().toISOString(),
+  };
+  assert.deepEqual(safeParse(JSON.stringify([{...valid, matches:[{id:'x'}]}])), []);
+  assert.equal(safeParse(JSON.stringify(Array.from({length:50}, () => valid))).length, 30);
+});

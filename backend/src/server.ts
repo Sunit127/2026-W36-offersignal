@@ -104,7 +104,7 @@ function sendJsonResponse(
     "Referrer-Policy": "no-referrer",
     "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
     "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     ...extraHeaders,
   });
@@ -252,6 +252,10 @@ export function createServerForDb(db: any) {
     }
 
     if (req.url === "/api/v1/checks" && req.method === "POST") {
+      const contentType = req.headers["content-type"] || "";
+      if (!/^application\\/json(?:\\s*;|$)/i.test(contentType)) {
+        return sendJsonResponse(res, 415, { error: "content_type_required" });
+      }
       try {
         const check = validateInput(await readRequestBody(req));
         const checkId = randomUUID();
@@ -294,6 +298,15 @@ export function createServerForDb(db: any) {
         expiresAt: row.expires_at,
         check: JSON.parse(row.payload),
       });
+    }
+
+    if (checkIdMatch && req.method === "DELETE") {
+      purgeExpired(db);
+      const deleted = db.prepare("DELETE FROM checks WHERE id=?").run(checkIdMatch[1]);
+      if (!deleted.changes) {
+        return sendJsonResponse(res, 404, { error: "check_not_found" });
+      }
+      return sendJsonResponse(res, 204, null);
     }
 
     return sendJsonResponse(res, 404, { error: "not_found" });
