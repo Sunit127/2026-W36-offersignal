@@ -26,6 +26,8 @@ const WINDOW_MS = 60_000;
 const ALLOWED_ORIGIN = process.env.OFFERSIGNAL_CORS_ORIGIN || "http://localhost:8080";
 const hits = new Map<string, number[]>();
 
+class ValidationError extends Error {}
+
 function configuredRetentionSeconds() {
   const configured = Number.parseInt(
     process.env.OFFERSIGNAL_RETENTION_SECONDS || String(30 * 24 * 60 * 60),
@@ -146,11 +148,11 @@ async function readRequestBody(req: IncomingMessage) {
 
 function validateInput(input: any) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
-    throw new Error("JSON object required");
+    throw new ValidationError("JSON object required");
   }
 
   if ("message" in input || "messageText" in input || "rawMessage" in input) {
-    throw new Error("Raw message text is never accepted by this service");
+    throw new ValidationError("Raw message text is never accepted by this service");
   }
 
   // Reject unknown keys so future client changes cannot silently broaden the
@@ -158,11 +160,11 @@ function validateInput(input: any) {
   const allowedKeys = new Set(["label", "channel", "score", "level", "matches", "actions"]);
   const unknownKey = Object.keys(input).find((key) => !allowedKeys.has(key));
   if (unknownKey) {
-    throw new Error(`unknown field: ${unknownKey}`);
+    throw new ValidationError(`unknown field: ${unknownKey}`);
   }
 
   if (typeof input.label !== "string" || input.label.trim().length < 1 || input.label.trim().length > 70) {
-    throw new Error("label must be 1-70 characters");
+    throw new ValidationError("label must be 1-70 characters");
   }
 
   if (
@@ -170,15 +172,15 @@ function validateInput(input: any) {
       input.channel,
     )
   ) {
-    throw new Error("invalid channel");
+    throw new ValidationError("invalid channel");
   }
 
   if (!Number.isInteger(input.score) || input.score < 0 || input.score > 100) {
-    throw new Error("score must be an integer from 0 to 100");
+    throw new ValidationError("score must be an integer from 0 to 100");
   }
 
   if (!["low", "verify", "high"].includes(input.level)) {
-    throw new Error("invalid level");
+    throw new ValidationError("invalid level");
   }
 
   if (
@@ -193,7 +195,7 @@ function validateInput(input: any) {
       );
     })
   ) {
-    throw new Error("invalid matches");
+    throw new ValidationError("invalid matches");
   }
 
   if (
@@ -203,7 +205,7 @@ function validateInput(input: any) {
       return typeof value === "string" && value.length <= 400;
     })
   ) {
-    throw new Error("invalid actions");
+    throw new ValidationError("invalid actions");
   }
 
   return {
@@ -224,7 +226,19 @@ function validateInput(input: any) {
 export function createServerForDb(db: any) {
   migrate(db);
 
-  return createServer(async (req, res) => {
+  return createServer((req, res) => {
+    handleRequest(req, res, db).catch(() => {
+      // Never expose storage errors or stack traces to clients.
+      if (!res.headersSent) {
+        sendJsonResponse(res, 503, { error: "service_unavailable" });
+      } else {
+        res.destroy();
+      }
+    });
+  });
+}
+
+async function handleRequest(req: IncomingMessage, res: ServerResponse, db: any) {
     const ip = (req.socket.remoteAddress || "unknown").replace(/^::ffff:/, "");
     if (req.method === "OPTIONS") {
       // CORS preflight should always be answered quickly.
@@ -248,6 +262,11 @@ export function createServerForDb(db: any) {
     }
 
     if (req.url === "/healthz" && req.method === "GET") {
+      try {
+        db.prepare("SELECT 1").get();
+      } catch {
+        return sendJsonResponse(res, 503, { error: "database_unavailable" });
+      }
       return sendJsonResponse(res, 200, { status: "ok" });
     }
 
@@ -277,8 +296,16 @@ export function createServerForDb(db: any) {
           check,
         });
       } catch (error: any) {
-        const statusCode = error.message === "body-too-large" ? 413 : 400;
-        return sendJsonResponse(res, statusCode, { error: error.message });
+        if (error.message === "body-too-large") {
+          return sendJsonResponse(res, 413, { error: "body_too_large" });
+        }
+        if (error.message === "invalid-json") {
+          return sendJsonResponse(res, 400, { error: "invalid_json" });
+        }
+        if (error instanceof ValidationError) {
+          return sendJsonResponse(res, 400, { error: error.message });
+        }
+        throw error;
       }
     }
 
@@ -310,7 +337,6 @@ export function createServerForDb(db: any) {
     }
 
     return sendJsonResponse(res, 404, { error: "not_found" });
-  });
 }
 
 export const app = createServerForDb(openDatabase(IS_TEST ? ":memory:" : DB_PATH));

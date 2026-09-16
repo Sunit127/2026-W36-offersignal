@@ -99,3 +99,24 @@ test("health and privacy-preserving create/fetch", async (t) => {
   const expired = await fetch(`${base}/api/v1/checks/${expiredId}`);
   assert.equal(expired.status, 404);
 });
+
+
+test("health reports database failures instead of claiming readiness", async (t) => {
+  const db = new DatabaseSync(":memory:");
+  migrate(db);
+  const server = createServerForDb(db);
+  await new Promise<void>((resolve) =>
+    server.listen(0, "127.0.0.1", () => resolve()),
+  );
+  t.after(async () => {
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve())),
+    );
+  });
+
+  const address = server.address();
+  db.close();
+  const response = await fetch("http://127.0.0.1:" + address.port + "/healthz");
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), { error: "database_unavailable" });
+});
