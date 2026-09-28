@@ -20,3 +20,13 @@ test('saved-check validation rejects malformed nested data and caps history', ()
   assert.deepEqual(safeParse(JSON.stringify([{...valid, matches:[{id:'x'}]}])), []);
   assert.equal(safeParse(JSON.stringify(Array.from({length:50}, () => valid))).length, 30);
 });
+
+test('analysis rejects values outside the UI contract', () => {
+  assert.throws(() => analyzeOffer({...base, label:'x'.repeat(71)}), /70 characters/);
+  assert.throws(() => analyzeOffer({...base, verified:'false'}), /process question/);
+  assert.throws(() => analyzeOffer({...base, senderEmail:'x'.repeat(321)}), /320 characters/);
+});
+test('personal domains with a DNS root dot still raise a warning', () => {
+  const result = analyzeOffer({...base, senderEmail:'recruiter@gmail.com.'});
+  assert.ok(result.matches.some((match) => match.id === 'email'));
+});
