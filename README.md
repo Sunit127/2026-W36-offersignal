@@ -29,6 +29,24 @@ python3 -m http.server 8080
 
 Open `http://localhost:8080`.
 
+## Continuous verification
+
+The checked-in [GitHub Actions workflow](.github/workflows/verify.yml) runs on every push to `main` and every pull request. It executes the exact frontend and backend commands below, a live privacy-safe API smoke test, high-severity npm audits for both lockfiles, and a tracked-file secret scan.
+
+```bash
+npm ci
+npm run check
+npm test
+npm run build
+npm run smoke
+npm --prefix backend ci
+npm run backend-test
+npm audit --audit-level=high
+npm --prefix backend audit --audit-level=high
+```
+
+The live API check starts the Node service on `127.0.0.1:8787`, waits for `/healthz`, stores a result summary, verifies raw message text is absent, and fetches it by ID. The CI job is a guardrail, not a security guarantee; keep the default local-only mode, restrict CORS, and protect the SQLite volume in production.
+
 ## Build and tests
 
 ```bash
