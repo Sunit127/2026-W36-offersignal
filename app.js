@@ -95,6 +95,7 @@ function renderResult(result) {
   $('#empty-output').hidden = true;
   $('#output').hidden = false;
   $('#result-name').textContent = result.label;
+  requestAnimationFrame(() => $('#result-name').focus({ preventScroll: true }));
 
   const tier = $('#result-tier');
   tier.textContent = result.title;
@@ -102,6 +103,8 @@ function renderResult(result) {
 
   $('#result-summary').textContent = result.summary;
   $('#score-bar').style.width = `${result.score}%`;
+  $('#score-bar').parentElement.setAttribute('aria-valuenow', String(result.score));
+  $('#score-bar').parentElement.setAttribute('aria-valuetext', `${result.score} out of 100 matched signal score`);
 
   const findings = $('#findings');
 
@@ -264,6 +267,7 @@ function wireUpForm() {
     } catch (error) {
       error.textContent = error.message;
       error.hidden = false;
+      error.focus({ preventScroll: true });
       error.scrollIntoView({ behavior: 'smooth' });
     }
   });

@@ -16,9 +16,9 @@
     <section class="proof-strip" aria-label="Why this matters"><div><strong>1M+</strong><span>imposter-scam reports to the FTC in 2025</span></div><div><strong>$3.5B</strong><span>reported imposter-scam losses in 2025</span></div><div><strong>Local</strong><span>analysis with no message upload</span></div></section>
 
       <section class="checker" id="checker">
-      <form id="offer-form" class="input-panel" novalidate data-depth="1.15" data-tilt>
+      <form id="offer-form" class="input-panel" novalidate aria-describedby="form-error" data-depth="1.15" data-tilt>
         <div class="panel-head"><div><p class="step">01 · Context</p><h2>What reached you?</h2></div><button class="link-button" type="reset">Clear</button></div>
-        <div id="form-error" class="error" role="alert" hidden></div>
+        <div id="form-error" class="error" role="alert" tabindex="-1" hidden></div>
         <div class="fields">
           <label>Role or company<input name="label" maxlength="70" required placeholder="Remote data assistant — Northstar"></label>
           <div class="two-col"><label>How they contacted you<select name="channel"><option value="email">Email</option><option value="text">Text message</option><option value="whatsapp">WhatsApp / Telegram</option><option value="social">Social media</option><option value="jobboard">Job board</option><option value="other">Other</option></select></label><label>Sender email (optional)<input name="senderEmail" type="email" placeholder="recruiter@example.com"></label></div>
@@ -31,9 +31,9 @@
       <section class="output-panel" aria-live="polite" data-depth="1.0" data-tilt>
         <div id="empty-output" class="empty"><div class="empty-bars" aria-hidden="true"><i></i><i></i><i></i></div><h2>A second look starts here</h2><p>OfferSignal checks for common pressure, payment, identity, and process patterns—entirely in your browser.</p></div>
         <div id="output" hidden>
-          <div class="result-head"><div><p class="step">02 · Signals</p><h2 id="result-name"></h2></div><span id="result-tier" class="tier"></span></div>
+          <div class="result-head"><div><p class="step">02 · Signals</p><h2 id="result-name" tabindex="-1"></h2></div><span id="result-tier" class="tier"></span></div>
           <p id="result-summary" class="summary"></p>
-          <div class="score-wrap"><div class="score-track"><span id="score-bar"></span></div><div class="score-labels"><span>Fewer matched signals</span><span>More matched signals</span></div></div>
+          <div class="score-wrap"><div class="score-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Matched signal score"><span id="score-bar"></span></div><div class="score-labels"><span>Fewer matched signals</span><span>More matched signals</span></div></div>
           <div class="not-verdict"><strong>This is not a verdict.</strong> A low score does not prove legitimacy, and a high score does not prove fraud. Verify independently.</div>
           <h3>Patterns to review</h3><div id="findings" class="findings"></div>
           <h3>Your safest next steps</h3><ol id="actions" class="actions"></ol>
