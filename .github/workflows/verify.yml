@@ -5,20 +5,27 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22.x
           cache: npm
@@ -26,20 +33,33 @@ jobs:
             package-lock.json
             backend/package-lock.json
 
+      - name: Set up Python for smoke assertions
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
       - name: Verify frontend
         run: npm ci && npm run check && npm test && npm run build && npm run smoke
 
       - name: Verify backend
-        run: npm --prefix backend ci && npm run backend-test
+        run: |
+          npm --prefix backend ci
+          npm run backend-test
+          npm --prefix backend exec tsc -- --noEmit -p tsconfig.json
 
       - name: Start API and exercise live contract
         env:
           OFFERSIGNAL_DB_PATH: ${{ runner.temp }}/offersignal.sqlite
           OFFERSIGNAL_CORS_ORIGIN: http://127.0.0.1:4174
         run: |
+          set -euo pipefail
           npm --prefix backend start > "${{ runner.temp }}/offersignal-api.log" 2>&1 &
           api_pid=$!
-          trap 'kill "$api_pid" 2>/dev/null || true' EXIT
+          cleanup() {
+            kill "$api_pid" 2>/dev/null || true
+            wait "$api_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
           for attempt in $(seq 1 20); do
             if curl --fail --silent http://127.0.0.1:8787/healthz > /dev/null; then
               break
@@ -50,7 +70,10 @@ jobs:
             fi
             sleep 1
           done
-          curl --fail --silent --X POST http://127.0.0.1:8787/api/v1/checks             -H 'Content-Type: application/json'             --data '{"label":"CI smoke","channel":"email","score":12,"level":"low","matches":[],"actions":["Verify independently."]}'             > "${{ runner.temp }}/offersignal-response.json"
+          curl --fail --silent --request POST http://127.0.0.1:8787/api/v1/checks \
+            -H 'Content-Type: application/json' \
+            --data '{"label":"CI smoke","channel":"email","score":12,"level":"low","matches":[],"actions":["Verify independently."]}' \
+            > "${{ runner.temp }}/offersignal-response.json"
           RESPONSE="${{ runner.temp }}/offersignal-response.json" python -c 'import json, os; data=json.load(open(os.environ["RESPONSE"])); assert data["check"]["label"] == "CI smoke"; assert "message" not in data["check"]; assert data["expiresAt"] > data["createdAt"]; print(data["id"])' > "${{ runner.temp }}/offersignal-id"
           curl --fail --silent "http://127.0.0.1:8787/api/v1/checks/$(cat "${{ runner.temp }}/offersignal-id")" > /dev/null
 
@@ -61,8 +84,16 @@ jobs:
         run: npm --prefix backend audit --audit-level=high
 
       - name: Scan tracked files for common secrets
+        shell: bash
         run: |
-          if git grep -n -E '\\b(AKIA[0-9A-Z]{16}|BEGIN (RSA|EC|OPENSSH|PGP) PRIVATE KEY|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{30,}|sk-[A-Za-z0-9]{16,})'; then
-            echo "Potential secret detected in tracked files"
+          if git grep -IEn \
+            -e 'AKI[A][0-9A-Z]{16}' \
+            -e 'BEGI[N] (RSA|EC|OPENSSH|PGP) PRIVATE KEY' \
+            -e 'gh[p]_[A-Za-z0-9]{20,}' \
+            -e 'github_pa[t]_[A-Za-z0-9_]{30,}' \
+            -e 's[k]-[A-Za-z0-9]{16,}' \
+            -- ':!.github/workflows/verify.yml'
+          then
+            echo "::error::Potential secret pattern found in tracked application files"
             exit 1
           fi
