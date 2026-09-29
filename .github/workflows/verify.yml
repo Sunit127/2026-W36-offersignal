@@ -45,7 +45,10 @@ jobs:
         run: |
           npm --prefix backend ci
           npm run backend-test
-          npm --prefix backend exec tsc -- --noEmit -p tsconfig.json
+
+      - name: Type-check backend
+        working-directory: backend
+        run: npm exec tsc -- --noEmit -p tsconfig.json
 
       - name: Start API and exercise live contract
         env:
