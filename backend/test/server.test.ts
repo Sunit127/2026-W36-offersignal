@@ -32,6 +32,7 @@ test("health and privacy-preserving create/fetch", async (t) => {
   });
 
   const address = server.address();
+  assert.ok(address && typeof address !== "string");
   const base = `http://127.0.0.1:${address.port}`;
 
   const health = await fetch(`${base}/healthz`);
@@ -115,6 +116,7 @@ test("health reports database failures instead of claiming readiness", async (t)
   });
 
   const address = server.address();
+  assert.ok(address && typeof address !== "string");
   db.close();
   const response = await fetch("http://127.0.0.1:" + address.port + "/healthz");
   assert.equal(response.status, 503);
