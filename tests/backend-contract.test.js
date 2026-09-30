@@ -21,7 +21,7 @@ test("result, errors, and score expose accessible semantics", () => {
   assert.match(index, /id="form-error"[^>]*tabindex="-1"/);
   assert.match(index, /id="result-name"[^>]*tabindex="-1"/);
   assert.match(index, /role="progressbar"[^>]*aria-valuenow="0"/);
-  assert.match(app, /result-name').focus/);
+  assert.ok(app.includes("$('#result-name').focus"));
   assert.match(app, /aria-valuenow/);
-  assert.match(app, /error\\.focus/);
+  assert.ok(app.includes('error.focus'));
 });
