@@ -45,6 +45,17 @@ test("health and privacy-preserving create/fetch", async (t) => {
   );
   assert.ok(probes.every((response) => response.status === 200));
 
+  const preflight = await fetch(base + "/api/v1/checks", {
+    method: "OPTIONS",
+    headers: {
+      origin: "http://localhost:8080",
+      "access-control-request-method": "POST",
+    },
+  });
+  assert.equal(preflight.status, 204);
+  assert.equal(preflight.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(preflight.headers.get("cache-control"), "no-store");
+
   const payload = {
     label: "Remote role",
     channel: "email",
@@ -71,6 +82,7 @@ test("health and privacy-preserving create/fetch", async (t) => {
 
   const unsupported = await fetch(base + "/api/v1/checks", { method: "POST", body: JSON.stringify(payload) });
   assert.equal(unsupported.status, 415);
+  assert.equal(unsupported.headers.get("x-frame-options"), "DENY");
 
   // Raw message text must be rejected to keep saved content private.
   const raw = await fetch(`${base}/api/v1/checks`, {

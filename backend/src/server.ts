@@ -24,6 +24,14 @@ function configuredRateLimit() {
 const RATE_LIMIT = configuredRateLimit();
 const WINDOW_MS = 60_000;
 const ALLOWED_ORIGIN = process.env.OFFERSIGNAL_CORS_ORIGIN || "http://localhost:8080";
+const SECURITY_HEADERS = {
+  "Cache-Control": "no-store",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "no-referrer",
+  "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+  "Vary": "Origin",
+};
 const hits = new Map<string, number[]>();
 
 class ValidationError extends Error {}
@@ -99,6 +107,7 @@ function sendJsonResponse(
   extraHeaders: Record<string, string> = {},
 ) {
   response.writeHead(status, {
+    ...SECURITY_HEADERS,
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
     "X-Content-Type-Options": "nosniff",
@@ -243,6 +252,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse, db: any)
     if (req.method === "OPTIONS") {
       // CORS preflight should always be answered quickly.
       res.writeHead(204, {
+        ...SECURITY_HEADERS,
         "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
         "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
