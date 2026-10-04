@@ -25,3 +25,9 @@ test("result, errors, and score expose accessible semantics", () => {
   assert.match(app, /aria-valuenow/);
   assert.ok(app.includes('error.focus'));
 });
+
+
+test("local exports omit sender email as well as raw message text", () => {
+  assert.match(app, /savedChecks\(\)\.map\(\(\{ message, senderEmail, \.\.\.rest \}\)/);
+  assert.match(app, /senderEmailOmitted/);
+});

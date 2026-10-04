@@ -134,3 +134,28 @@ test("health reports database failures instead of claiming readiness", async (t)
   assert.equal(response.status, 503);
   assert.deepEqual(await response.json(), { error: "database_unavailable" });
 });
+
+
+test("migrate adopts a legacy checks table without a migration ledger", () => {
+  const db = new DatabaseSync(":memory:");
+  db.exec("CREATE TABLE checks (id TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL)");
+  const createdAt = new Date().toISOString();
+  db.prepare("INSERT INTO checks(id,payload,created_at) VALUES(?,?,?)").run(
+    "legacy-id",
+    "{}",
+    createdAt,
+  );
+
+  migrate(db);
+
+  const columns = db.prepare("PRAGMA table_info(checks)").all() as Array<{ name: string }>;
+  assert.ok(columns.some((column) => column.name === "expires_at"));
+  assert.equal(
+    db.prepare("SELECT version FROM schema_migrations WHERE version=1").get()?.version,
+    1,
+  );
+  assert.ok(
+    db.prepare("SELECT expires_at FROM checks WHERE id=?").get("legacy-id")?.expires_at,
+  );
+  db.close();
+});

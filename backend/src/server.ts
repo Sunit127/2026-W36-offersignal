@@ -66,7 +66,7 @@ export function migrate(db: any) {
   );
   if (!db.prepare("SELECT version FROM schema_migrations WHERE version=1").get()) {
     db.exec(`
-      CREATE TABLE checks (
+      CREATE TABLE IF NOT EXISTS checks (
         id TEXT PRIMARY KEY,
         payload TEXT NOT NULL,
         created_at TEXT NOT NULL,

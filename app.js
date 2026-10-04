@@ -321,7 +321,7 @@ function wireUpActions() {
   };
 
   $('#export-checks').onclick = () => {
-    const exportItems = savedChecks().map(({ message, ...rest }) => ({ ...rest, messageOmitted: true }));
+    const exportItems = savedChecks().map(({ message, senderEmail, ...rest }) => ({ ...rest, messageOmitted: true, senderEmailOmitted: Boolean(senderEmail) }));
 
     const blob = new Blob(
       [
