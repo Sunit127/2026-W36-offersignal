@@ -3,6 +3,11 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 const app = await readFile(new URL("../app.js", import.meta.url), "utf8");
 const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
+const backend = await readFile(new URL("../backend/src/server.ts", import.meta.url), "utf8");
+test("backend type-checking cannot be silently disabled", () => {
+  assert.doesNotMatch(backend, /@ts-nocheck/);
+});
+
 test("team save uses the minimal privacy-safe API contract", () => {
   assert.match(app, /OFFERSIGNAL_API_BASE/);
   assert.match(app, /\/api\/v1\/checks/);
