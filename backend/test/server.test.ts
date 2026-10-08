@@ -100,6 +100,24 @@ test("health and privacy-preserving create/fetch", async (t) => {
   });
   assert.equal(unknown.status, 400);
 
+  // Nested summaries must fail closed instead of being silently truncated.
+  const oversizedMatch = await fetch(`${base}/api/v1/checks`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      ...payload,
+      matches: [{ id: "rule", title: "x".repeat(161), why: "Reason" }],
+    }),
+  });
+  assert.equal(oversizedMatch.status, 400);
+
+  const blankAction = await fetch(`${base}/api/v1/checks`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ...payload, actions: ["   "] }),
+  });
+  assert.equal(blankAction.status, 400);
+
   const expiredId = "00000000-0000-4000-8000-000000000001";
   db.prepare(
     "INSERT INTO checks(id,payload,created_at,expires_at) VALUES(?,?,?,?)",

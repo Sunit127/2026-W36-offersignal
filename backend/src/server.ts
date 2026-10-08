@@ -35,6 +35,14 @@ const hits = new Map<string, number[]>();
 
 class ValidationError extends Error {}
 
+function isBoundedText(value: unknown, maxLength: number) {
+  return (
+    typeof value === "string"
+    && value.trim().length > 0
+    && value.length <= maxLength
+  );
+}
+
 function configuredRetentionSeconds() {
   const configured = Number.parseInt(
     process.env.OFFERSIGNAL_RETENTION_SECONDS || String(30 * 24 * 60 * 60),
@@ -197,9 +205,9 @@ function validateInput(input: any) {
     || !input.matches.every((entry: any) => {
       return (
         entry &&
-        typeof entry.id === "string" &&
-        typeof entry.title === "string" &&
-        typeof entry.why === "string"
+        isBoundedText(entry.id, 40) &&
+        isBoundedText(entry.title, 160) &&
+        isBoundedText(entry.why, 400)
       );
     })
   ) {
@@ -210,7 +218,7 @@ function validateInput(input: any) {
     !Array.isArray(input.actions)
     || input.actions.length > 20
     || !input.actions.every((value: any) => {
-      return typeof value === "string" && value.length <= 400;
+      return isBoundedText(value, 400);
     })
   ) {
     throw new ValidationError("invalid actions");
@@ -222,11 +230,11 @@ function validateInput(input: any) {
     score: input.score,
     level: input.level,
     matches: input.matches.map((entry: any) => ({
-      id: entry.id.slice(0, 40),
-      title: entry.title.slice(0, 160),
-      why: entry.why.slice(0, 400),
+      id: entry.id.trim(),
+      title: entry.title.trim(),
+      why: entry.why.trim(),
     })),
-    actions: input.actions.map((value: any) => value.slice(0, 400)),
+    actions: input.actions.map((value: any) => value.trim()),
     createdAt: new Date().toISOString(),
   };
 }
