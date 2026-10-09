@@ -354,10 +354,11 @@ function wireUpActions() {
       if (!imported.length) throw new Error('no valid checks');
       const existing = savedChecks();
       const ids = new Set(existing.map((check) => check.id).filter(Boolean));
-      const additions = imported.map((check) => ({
-        ...check,
-        id: check.id && !ids.has(check.id) ? check.id : crypto.randomUUID(),
-      }));
+      const additions = imported.map((check) => {
+        const id = check.id && !ids.has(check.id) ? check.id : crypto.randomUUID();
+        ids.add(id);
+        return { ...check, id };
+      });
       saveChecks([...additions, ...existing].slice(0, 30));
       showToast('Imported ' + additions.length + ' check' + (additions.length === 1 ? '' : 's'));
     } catch {
