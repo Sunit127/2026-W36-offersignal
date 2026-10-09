@@ -345,6 +345,28 @@ function wireUpActions() {
     URL.revokeObjectURL(anchor.href);
   };
 
+  $('#import-checks').onclick = () => $('#import-checks-file').click();
+  $('#import-checks-file').addEventListener('change', async (event) => {
+    const [file] = event.target.files || [];
+    if (!file) return;
+    try {
+      const imported = safeParse(await file.text());
+      if (!imported.length) throw new Error('no valid checks');
+      const existing = savedChecks();
+      const ids = new Set(existing.map((check) => check.id).filter(Boolean));
+      const additions = imported.map((check) => ({
+        ...check,
+        id: check.id && !ids.has(check.id) ? check.id : crypto.randomUUID(),
+      }));
+      saveChecks([...additions, ...existing].slice(0, 30));
+      showToast('Imported ' + additions.length + ' check' + (additions.length === 1 ? '' : 's'));
+    } catch {
+      showToast('Import failed: choose an OfferSignal JSON export');
+    } finally {
+      event.target.value = '';
+    }
+  });
+
   $('#share-check').onclick = shareCheck;
 
   $('#clear-checks').onclick = () => {
