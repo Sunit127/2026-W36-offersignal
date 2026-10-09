@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 // Node 22.5+ is required for node:sqlite.
 // @ts-ignore
 import { DatabaseSync } from "node:sqlite";
-import { createServerForDb, migrate } from "../src/server.ts";
+import { createServerForDb, migrate, hits, MAX_TRACKED_CLIENTS, pruneRateLimitEntries } from "../src/server.ts";
 
 test("health and privacy-preserving create/fetch", async (t) => {
   const db = new DatabaseSync(":memory:");
@@ -176,4 +176,16 @@ test("migrate adopts a legacy checks table without a migration ledger", () => {
     db.prepare("SELECT expires_at FROM checks WHERE id=?").get("legacy-id")?.expires_at,
   );
   db.close();
+});
+
+
+test("rate-limit state is pruned and bounded", () => {
+  const now = Date.now() + 60_001;
+  hits.clear();
+  for (let index = 0; index < MAX_TRACKED_CLIENTS + 1; index += 1) {
+    hits.set("client-" + index, [now]);
+  }
+  pruneRateLimitEntries(now);
+  assert.equal(hits.size, MAX_TRACKED_CLIENTS);
+  hits.clear();
 });
