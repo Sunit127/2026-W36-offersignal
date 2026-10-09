@@ -5,6 +5,10 @@ test('task scam language yields high concern',()=>{const r=analyzeOffer({...base
 test('fake check equipment pattern creates payment action',()=>{const r=analyzeOffer({...base,message:'We will send a check for equipment. Deposit the check, purchase equipment from our preferred vendor, and refund the difference.'});assert.ok(r.matches.some(x=>x.id==='check'));assert.match(r.actions[0],/Do not pay|Stop sharing/);});
 test('message and label validation are helpful',()=>assert.throws(()=>analyzeOffer({...base,label:'',message:'short'}),/label/i));
 test('corrupt storage is safely ignored',()=>assert.deepEqual(safeParse('nope'),[]));
+test('privacy-reduced export envelopes round-trip without raw message text', () => {
+  const check = {label:'Role', messageOmitted:true, senderEmailOmitted:false, channel:'email', applied:true, interviewed:false, verified:false, score:20, level:'verify', title:'Verify carefully before proceeding', summary:'Several patterns deserve confirmation.', matches:[], actions:['Verify independently.'], createdAt:new Date().toISOString()};
+  assert.equal(safeParse(JSON.stringify({exportedAt:new Date().toISOString(), privacyNote:'Message bodies are omitted from export.', checks:[check]})).length, 1);
+});
 test('malformed saved entries are ignored',()=>assert.deepEqual(safeParse('[null,{\"label\":\"incomplete\"}]'),[]));
 test('sender email and channel validation are enforced',()=>{assert.throws(()=>analyzeOffer({...base,senderEmail:'not-an-email'}),/valid sender email/i);assert.throws(()=>analyzeOffer({...base,channel:'carrier-pigeon'}),/contacted you/i);});
 test('message size limit is enforced',()=>assert.throws(()=>analyzeOffer({...base,message:'x'.repeat(10001)}),/10,000/));
