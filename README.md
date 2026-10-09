@@ -13,7 +13,7 @@ It does **not** declare an offer legitimate or fraudulent, identify a sender, re
 
 ## Architecture
 
-OfferSignal is a dependency-free static PWA. `logic.js` contains the deterministic and unit-tested rules engine. `app.js` handles the UI and browser `localStorage`. `sw.js` caches the app shell for offline use. There is no server, AI provider, analytics, or external integration.
+OfferSignal has a dependency-free local-first client and an optional TypeScript/Node/SQLite service. `logic.js` contains the deterministic and unit-tested rules engine. `app.js` handles the UI and browser `localStorage`; saved checks can be exported and re-imported as validated JSON without restoring raw message text. `sw.js` caches the app shell for offline use. There is no AI provider, analytics, or external integration.
 
 The rules return matched categories and their rationale rather than a black-box verdict. An independently verified official-careers-site match lowers the signal score but never marks an offer safe.
 
