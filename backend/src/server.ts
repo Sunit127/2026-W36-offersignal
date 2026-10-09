@@ -22,6 +22,8 @@ function configuredRateLimit() {
 
 const RATE_LIMIT = configuredRateLimit();
 const WINDOW_MS = 60_000;
+export const MAX_TRACKED_CLIENTS = 10_000;
+let lastRateCleanup = 0;
 const ALLOWED_ORIGIN = process.env.OFFERSIGNAL_CORS_ORIGIN || "http://localhost:8080";
 const SECURITY_HEADERS = {
   "Cache-Control": "no-store",
@@ -31,7 +33,24 @@ const SECURITY_HEADERS = {
   "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
   "Vary": "Origin",
 };
-const hits = new Map<string, number[]>();
+export const hits = new Map<string, number[]>();
+
+export function pruneRateLimitEntries(now: number) {
+  if (now - lastRateCleanup < WINDOW_MS) return;
+  lastRateCleanup = now;
+  for (const [key, timestamps] of hits) {
+    const recent = timestamps.filter((timestamp) => now - timestamp < WINDOW_MS);
+    if (recent.length) hits.set(key, recent);
+    else hits.delete(key);
+  }
+  if (hits.size > MAX_TRACKED_CLIENTS) {
+    const newest = [...hits.entries()]
+      .sort(([, a], [, b]) => b[b.length - 1] - a[a.length - 1])
+      .slice(0, MAX_TRACKED_CLIENTS);
+    hits.clear();
+    for (const entry of newest) hits.set(entry[0], entry[1]);
+  }
+}
 
 class ValidationError extends Error {}
 
@@ -269,6 +288,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse, db: any)
 
     // Keep CORS preflights and liveness probes available under API load.
     const shouldLimit = req.method !== "OPTIONS" && req.url !== "/healthz";
+    if (shouldLimit) pruneRateLimitEntries(Date.now());
     if (shouldLimit && isRateLimited(ip)) {
       return sendJsonResponse(
         res,
