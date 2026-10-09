@@ -36,7 +36,7 @@ const SECURITY_HEADERS = {
 export const hits = new Map<string, number[]>();
 
 export function pruneRateLimitEntries(now: number) {
-  if (now - lastRateCleanup < WINDOW_MS) return;
+  if (now - lastRateCleanup < WINDOW_MS && hits.size <= MAX_TRACKED_CLIENTS) return;
   lastRateCleanup = now;
   for (const [key, timestamps] of hits) {
     const recent = timestamps.filter((timestamp) => now - timestamp < WINDOW_MS);
