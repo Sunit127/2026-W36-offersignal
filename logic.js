@@ -25,7 +25,10 @@ function isSavedCheck(value) {
   if (!value || typeof value !== 'object') return false;
   const text = (key, max) => typeof value[key] === 'string' && value[key].trim().length > 0 && value[key].length <= max;
   if (!text('label', 70) || !text('title', 120) || !text('summary', 500)) return false;
-  if (!text('message', 10000) || typeof value.senderEmail !== 'string' || value.senderEmail.length > 320) return false;
+  const hasMessage = text('message', 10000) || value.messageOmitted === true;
+  const hasSenderEmail = typeof value.senderEmail === 'string' || typeof value.senderEmailOmitted === 'boolean';
+  if (!hasMessage || !hasSenderEmail) return false;
+  if (value.senderEmail !== undefined && (typeof value.senderEmail !== 'string' || value.senderEmail.length > 320)) return false;
   if (!['email', 'text', 'whatsapp', 'social', 'jobboard', 'other'].includes(value.channel)) return false;
   if (!['low', 'verify', 'high'].includes(value.level) || !Number.isInteger(value.score) || value.score < 0 || value.score > 100) return false;
   if (typeof value.applied !== 'boolean' || typeof value.interviewed !== 'boolean' || typeof value.verified !== 'boolean') return false;
@@ -42,7 +45,12 @@ function isSavedCheck(value) {
 export function safeParse(raw) {
   try {
     const data = JSON.parse(raw);
-    return Array.isArray(data) ? data.slice(0, 30).filter(isSavedCheck) : [];
+    const candidates = Array.isArray(data)
+      ? data
+      : data && Array.isArray(data.checks)
+        ? data.checks
+        : null;
+    return Array.isArray(candidates) ? candidates.slice(0, 30).filter(isSavedCheck) : [];
   } catch {
     return [];
   }
