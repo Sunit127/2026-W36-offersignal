@@ -45,7 +45,7 @@ npm audit --audit-level=high
 npm --prefix backend audit --audit-level=high
 ```
 
-The live API check starts the Node service on `127.0.0.1:8787`, waits for `/healthz`, stores a result summary, verifies raw message text is absent, and fetches it by ID. The CI job is a guardrail, not a security guarantee; keep the default local-only mode, restrict CORS, and protect the SQLite volume in production.
+The live API check starts the Node service on `127.0.0.1:8787`, waits for `/healthz`, stores a result summary, verifies raw message text is absent, fetches it by ID, deletes it, and confirms it is gone. The CI job is a guardrail, not a security guarantee; keep the default local-only mode, restrict CORS, and protect the SQLite volume in production.
 
 ## Build and tests
 
@@ -104,4 +104,4 @@ npm test
 OFFERSIGNAL_CORS_ORIGIN=http://localhost:8080 npm start
 ```
 
-Set `window.OFFERSIGNAL_API_BASE` in a deployment wrapper to enable “Save result to team.” Without it, the app remains local-only. The API requires Node 22.5+ for `node:sqlite`, exposes `GET /healthz`, `POST /api/v1/checks`, `GET /api/v1/checks/:id`, and `DELETE /api/v1/checks/:id` for explicit retention control, and applies body limits, validation, rate limiting, CORS, and security headers. It stores no raw job-message text by default.
+Set `window.OFFERSIGNAL_API_BASE` in a deployment wrapper to enable “Save result to team.” Without it, the app remains local-only. After an opt-in save, the client exposes the full bearer ID, a copyable retrieval URL, and an explicit delete action; users should treat the URL as sensitive. The API requires Node 22.5+ for `node:sqlite`, exposes `GET /healthz`, `POST /api/v1/checks`, `GET /api/v1/checks/:id`, and `DELETE /api/v1/checks/:id` for explicit retention control, and applies body limits, validation, rate limiting, CORS, and security headers. It stores no raw job-message text by default.

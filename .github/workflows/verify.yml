@@ -79,6 +79,8 @@ jobs:
             > "${{ runner.temp }}/offersignal-response.json"
           RESPONSE="${{ runner.temp }}/offersignal-response.json" python -c 'import json, os; data=json.load(open(os.environ["RESPONSE"])); assert data["check"]["label"] == "CI smoke"; assert "message" not in data["check"]; assert data["expiresAt"] > data["createdAt"]; print(data["id"])' > "${{ runner.temp }}/offersignal-id"
           curl --fail --silent "http://127.0.0.1:8787/api/v1/checks/$(cat "${{ runner.temp }}/offersignal-id")" > /dev/null
+          curl --fail --silent --request DELETE "http://127.0.0.1:8787/api/v1/checks/$(cat "${{ runner.temp }}/offersignal-id")" > /dev/null
+          test "$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:8787/api/v1/checks/$(cat "${{ runner.temp }}/offersignal-id")")" = "404"
 
       - name: Audit frontend dependencies
         run: npm audit --audit-level=high

@@ -14,6 +14,14 @@ test("team save uses the minimal privacy-safe API contract", () => {
   assert.ok(app.includes("const privacySafe = { label, channel, score, level, matches, actions };"));
   assert.ok(app.includes("} = currentResult;"));
 });
+test("team saves remain retrievable and explicitly deletable", () => {
+  assert.match(index, /id="team-save-id"/);
+  assert.match(index, /id="copy-team-link"/);
+  assert.match(index, /id="delete-team-copy"/);
+  assert.ok(app.includes("url: `${endpoint}/${encodeURIComponent(data.id)}`"));
+  assert.match(app, /method: ['"]DELETE['"]/);
+});
+
 test("raw message fields are excluded from team request", () => {
   const share = app.slice(app.indexOf("async function shareCheck"), app.indexOf("form.addEventListener"));
   assert.doesNotMatch(share, /JSON\.stringify\(currentResult\)/);

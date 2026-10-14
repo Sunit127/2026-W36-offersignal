@@ -6,6 +6,7 @@ const STORAGE_KEY = 'offersignal-checks-v1';
 const API_BASE = globalThis.OFFERSIGNAL_API_BASE || '';
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 let currentResult = null;
+let teamSave = null;
 
 function values() {
   const formData = new FormData(form);
@@ -89,7 +90,14 @@ function initTiltScenes(root = document) {
   root.querySelectorAll('[data-tilt]').forEach(initTiltForElement);
 }
 
+function clearTeamSave() {
+  teamSave = null;
+  $('#team-save-id').textContent = '';
+  $('#team-save-result').hidden = true;
+}
+
 function renderResult(result) {
+  clearTeamSave();
   currentResult = result;
 
   $('#empty-output').hidden = true;
@@ -222,6 +230,11 @@ async function shareCheck() {
     return;
   }
 
+  if (teamSave) {
+    showToast('Delete the existing team copy before saving again');
+    return;
+  }
+
   const button = $('#share-check');
   button.disabled = true;
 
@@ -237,7 +250,8 @@ async function shareCheck() {
       actions,
     } = currentResult;
     const privacySafe = { label, channel, score, level, matches, actions };
-    const response = await fetch(`${API_BASE.replace(/\/$/, '')}/api/v1/checks`, {
+    const endpoint = `${API_BASE.replace(/\/$/, '')}/api/v1/checks`;
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(privacySafe),
@@ -248,7 +262,21 @@ async function shareCheck() {
     }
 
     const data = await response.json();
-    showToast(`Saved to team vault: ${data.id.slice(0, 8)}`);
+    if (
+      !data
+      || typeof data.id !== 'string'
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.id)
+    ) {
+      throw new Error('Server returned an invalid result ID');
+    }
+
+    teamSave = {
+      id: data.id,
+      url: `${endpoint}/${encodeURIComponent(data.id)}`,
+    };
+    $('#team-save-id').textContent = data.id;
+    $('#team-save-result').hidden = false;
+    showToast('Saved to team vault');
   } catch (error) {
     showToast('Could not save; check remains local');
   } finally {
@@ -278,6 +306,7 @@ function wireUpForm() {
       $('#output').hidden = true;
       $('#empty-output').hidden = false;
       $('#form-error').hidden = true;
+      clearTeamSave();
     }, 0);
   });
 
@@ -369,6 +398,40 @@ function wireUpActions() {
   });
 
   $('#share-check').onclick = shareCheck;
+
+  $('#copy-team-link').onclick = async () => {
+    if (!teamSave) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(teamSave.url);
+      showToast('Team retrieval URL copied');
+    } catch {
+      showToast('Clipboard unavailable');
+    }
+  };
+
+  $('#delete-team-copy').onclick = async () => {
+    if (!teamSave) {
+      return;
+    }
+
+    const button = $('#delete-team-copy');
+    button.disabled = true;
+    try {
+      const response = await fetch(teamSave.url, { method: 'DELETE' });
+      if (response.status !== 204) {
+        throw new Error('Server rejected deletion');
+      }
+      clearTeamSave();
+      showToast('Team copy deleted');
+    } catch {
+      showToast('Could not delete the team copy');
+    } finally {
+      button.disabled = false;
+    }
+  };
 
   $('#clear-checks').onclick = () => {
     if (confirm('Delete all locally saved OfferSignal checks?')) {

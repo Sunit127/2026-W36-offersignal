@@ -80,6 +80,12 @@ test("health and privacy-preserving create/fetch", async (t) => {
   assert.equal(fetched.status, 200);
   assert.equal((await fetched.json()).check.score, 12);
 
+  const deleted = await fetch(`${base}/api/v1/checks/${saved.id}`, {
+    method: "DELETE",
+  });
+  assert.equal(deleted.status, 204);
+  assert.equal((await fetch(`${base}/api/v1/checks/${saved.id}`)).status, 404);
+
   const unsupported = await fetch(base + "/api/v1/checks", { method: "POST", body: JSON.stringify(payload) });
   assert.equal(unsupported.status, 415);
   assert.equal(unsupported.headers.get("x-frame-options"), "DENY");
