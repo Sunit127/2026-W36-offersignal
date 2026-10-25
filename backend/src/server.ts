@@ -218,6 +218,15 @@ function validateInput(input: any) {
     throw new ValidationError("invalid level");
   }
 
+  const expectedLevel = input.score >= 50
+    ? "high"
+    : input.score >= 20
+      ? "verify"
+      : "low";
+  if (input.level !== expectedLevel) {
+    throw new ValidationError("level does not match score");
+  }
+
   if (
     !Array.isArray(input.matches)
     || input.matches.length > 20
@@ -233,8 +242,14 @@ function validateInput(input: any) {
     throw new ValidationError("invalid matches");
   }
 
+  const matchIds = new Set(input.matches.map((entry: any) => entry.id));
+  if (matchIds.size !== input.matches.length) {
+    throw new ValidationError("duplicate match ids");
+  }
+
   if (
     !Array.isArray(input.actions)
+    || input.actions.length < 1
     || input.actions.length > 20
     || !input.actions.every((value: any) => {
       return isBoundedText(value, 400);

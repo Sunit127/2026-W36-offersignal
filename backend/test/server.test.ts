@@ -124,6 +124,40 @@ test("health and privacy-preserving create/fetch", async (t) => {
   });
   assert.equal(blankAction.status, 400);
 
+  const emptyActions = await fetch(`${base}/api/v1/checks`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ...payload, actions: [] }),
+  });
+  assert.equal(emptyActions.status, 400);
+  assert.deepEqual(await emptyActions.json(), { error: "invalid actions" });
+
+  const inconsistentLevel = await fetch(`${base}/api/v1/checks`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ...payload, score: 55, level: "low" }),
+  });
+  assert.equal(inconsistentLevel.status, 400);
+  assert.deepEqual(await inconsistentLevel.json(), {
+    error: "level does not match score",
+  });
+
+  const duplicateMatches = await fetch(`${base}/api/v1/checks`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      ...payload,
+      matches: [
+        { id: "urgency", title: "Urgency", why: "Pressure to act." },
+        { id: "urgency", title: "Urgency again", why: "Repeated signal." },
+      ],
+    }),
+  });
+  assert.equal(duplicateMatches.status, 400);
+  assert.deepEqual(await duplicateMatches.json(), {
+    error: "duplicate match ids",
+  });
+
   const expiredId = "00000000-0000-4000-8000-000000000001";
   db.prepare(
     "INSERT INTO checks(id,payload,created_at,expires_at) VALUES(?,?,?,?)",
