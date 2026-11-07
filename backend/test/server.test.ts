@@ -229,3 +229,42 @@ test("rate-limit state is pruned and bounded", () => {
   assert.equal(hits.size, MAX_TRACKED_CLIENTS);
   hits.clear();
 });
+
+
+test("idle retention cleanup removes expired summaries", async (t) => {
+  const db = new DatabaseSync(":memory:");
+  const server = createServerForDb(db, 10);
+  db.prepare(
+    "INSERT INTO checks(id,payload,created_at,expires_at) VALUES(?,?,?,?)",
+  ).run(
+    "00000000-0000-4000-8000-000000000002",
+    "{}",
+    "2020-01-01T00:00:00.000Z",
+    "2020-01-02T00:00:00.000Z",
+  );
+
+  await new Promise<void>((resolve) => {
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  t.after(async () => {
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => (error ? reject(error) : resolve()));
+    });
+    db.close();
+  });
+
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const row = db.prepare("SELECT 1 FROM checks WHERE id=?").get(
+      "00000000-0000-4000-8000-000000000002",
+    );
+    if (!row) break;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+
+  assert.equal(
+    db.prepare("SELECT 1 FROM checks WHERE id=?").get(
+      "00000000-0000-4000-8000-000000000002",
+    ),
+    undefined,
+  );
+});

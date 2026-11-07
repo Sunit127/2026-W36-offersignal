@@ -13,11 +13,11 @@ npm test
 OFFERSIGNAL_CORS_ORIGIN=http://localhost:8080 npm start
 ```
 
-Endpoints: `GET /healthz`, `POST /api/v1/checks`, `GET /api/v1/checks/:id`, and `DELETE /api/v1/checks/:id` for explicit retention control. Bodies are capped at 64 KiB, validated, rate-limited per client, CORS-scoped, and returned with defensive headers. Nested match summaries and actions have strict non-blank length bounds and are rejected rather than silently truncated. Saved summaries expire after 30 days by default; configure `OFFERSIGNAL_RETENTION_SECONDS` between 5 minutes and 365 days for a different privacy window. Expired rows are rejected and purged during service activity. Store the SQLite file on a protected volume and terminate TLS at a reverse proxy. This API stores a result summary only; it is not an identity-verification or scam verdict service.
+Endpoints: `GET /healthz`, `POST /api/v1/checks`, `GET /api/v1/checks/:id`, and `DELETE /api/v1/checks/:id` for explicit retention control. Bodies are capped at 64 KiB, validated, rate-limited per client, CORS-scoped, and returned with defensive headers. Nested match summaries and actions have strict non-blank length bounds and are rejected rather than silently truncated. Saved summaries expire after 30 days by default; configure `OFFERSIGNAL_RETENTION_SECONDS` between 5 minutes and 365 days for a different privacy window. Expired rows are rejected during reads and purged during service activity and by an idle background cleanup loop. Configure `OFFERSIGNAL_CLEANUP_INTERVAL_SECONDS` between 60 seconds and 24 hours (one hour by default). Store the SQLite file on a protected volume and terminate TLS at a reverse proxy. This API stores a result summary only; it is not an identity-verification or scam verdict service.
 
 ## Backup and restore
 
-Retention cleanup is request-driven. For a long-running deployment, schedule a maintenance request or an operator job and monitor database size. Back up the SQLite file while the service is stopped (or use SQLite’s online backup command), keep backups access-controlled, and test restores:
+Retention cleanup runs in-process every hour by default and also during relevant requests. Monitor database size; multi-process deployments may run the idempotent cleanup in each worker. Back up the SQLite file while the service is stopped (or use SQLite’s online backup command), keep backups access-controlled, and test restores:
 
 ```bash
 mkdir -p backups

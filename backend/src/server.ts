@@ -73,6 +73,17 @@ function configuredRetentionSeconds() {
 
 const RETENTION_SECONDS = configuredRetentionSeconds();
 
+function configuredCleanupIntervalMs() {
+  const configured = Number.parseInt(
+    process.env.OFFERSIGNAL_CLEANUP_INTERVAL_SECONDS || "3600",
+    10,
+  );
+  const seconds = Number.isFinite(configured) ? configured : 3600;
+  return Math.max(60, Math.min(seconds, 24 * 60 * 60)) * 1000;
+}
+
+const CLEANUP_INTERVAL_MS = configuredCleanupIntervalMs();
+
 function expiryFor(createdAt: string) {
   const created = Date.parse(createdAt);
   const base = Number.isFinite(created) ? created : Date.now();
@@ -273,10 +284,13 @@ function validateInput(input: any) {
   };
 }
 
-export function createServerForDb(db: any) {
+export function createServerForDb(
+  db: any,
+  cleanupIntervalMs = CLEANUP_INTERVAL_MS,
+) {
   migrate(db);
 
-  return createServer((req, res) => {
+  const server = createServer((req, res) => {
     handleRequest(req, res, db).catch(() => {
       // Never expose storage errors or stack traces to clients.
       if (!res.headersSent) {
@@ -286,6 +300,24 @@ export function createServerForDb(db: any) {
       }
     });
   });
+
+  let cleanupTimer: ReturnType<typeof setInterval> | undefined;
+  server.on("listening", () => {
+    cleanupTimer = setInterval(() => {
+      try {
+        purgeExpired(db);
+      } catch {
+        // Keep serving and retry later without exposing storage details.
+        console.error("OfferSignal retention cleanup failed");
+      }
+    }, cleanupIntervalMs);
+    cleanupTimer.unref();
+  });
+  server.on("close", () => {
+    if (cleanupTimer) clearInterval(cleanupTimer);
+  });
+
+  return server;
 }
 
 async function handleRequest(req: IncomingMessage, res: ServerResponse, db: any) {
