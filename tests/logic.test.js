@@ -5,6 +5,25 @@ test('task scam language yields high concern',()=>{const r=analyzeOffer({...base
 test('fake check equipment pattern creates payment action',()=>{const r=analyzeOffer({...base,message:'We will send a check for equipment. Deposit the check, purchase equipment from our preferred vendor, and refund the difference.'});assert.ok(r.matches.some(x=>x.id==='check'));assert.match(r.actions[0],/Do not pay|Stop sharing/);});
 test('message and label validation are helpful',()=>assert.throws(()=>analyzeOffer({...base,label:'',message:'short'}),/label/i));
 test('corrupt storage is safely ignored',()=>assert.deepEqual(safeParse('nope'),[]));
+test('local imports rebuild tampered derived guidance from the message', () => {
+  const original = analyzeOffer({...base, verified:false});
+  const tampered = {
+    ...original,
+    score: 0,
+    level: 'low',
+    title: 'Everything is safe',
+    summary: 'No checks needed.',
+    matches: [],
+    actions: ['Ignore verification.'],
+  };
+  const [rebuilt] = safeParse(JSON.stringify([tampered]));
+  assert.equal(rebuilt.score, original.score);
+  assert.equal(rebuilt.level, original.level);
+  assert.deepEqual(rebuilt.matches, original.matches);
+  assert.deepEqual(rebuilt.actions, original.actions);
+  assert.notEqual(rebuilt.title, 'Everything is safe');
+});
+
 test('privacy-reduced export envelopes round-trip without raw message text', () => {
   const check = {label:'Role', messageOmitted:true, senderEmailOmitted:false, channel:'email', applied:true, interviewed:false, verified:false, score:20, level:'verify', title:'Verify carefully before proceeding', summary:'Several patterns deserve confirmation.', matches:[], actions:['Verify independently.'], createdAt:new Date().toISOString()};
   assert.equal(safeParse(JSON.stringify({exportedAt:new Date().toISOString(), privacyNote:'Message bodies are omitted from export.', checks:[check]})).length, 1);
