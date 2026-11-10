@@ -21,6 +21,35 @@ export function analyzeOffer(input){
   if(matches.some(x=>x.id==='sensitive'))actions.unshift('Stop sharing personal or financial information. If already shared, use IdentityTheft.gov or your country’s official identity-theft service.');
   return {label,message,senderEmail:email,channel,applied:!!input.applied,interviewed:!!input.interviewed,verified:!!input.verified,score,level,...config,matches,actions,createdAt:new Date().toISOString()};
 }
+function normalizeSavedCheck(value) {
+  if (!isSavedCheck(value)) return null;
+
+  // Local saves still contain the original message. Re-run the deterministic
+  // rules before rendering so imported/tampered derived fields cannot become
+  // an authoritative-looking result. Privacy-reduced exports are intentionally
+  // allowed through with messageOmitted=true because their source is gone.
+  if (typeof value.message !== "string" || value.messageOmitted === true) {
+    return value;
+  }
+
+  try {
+    const rebuilt = analyzeOffer({
+      label: value.label,
+      channel: value.channel,
+      senderEmail: value.senderEmail,
+      message: value.message,
+      applied: value.applied,
+      interviewed: value.interviewed,
+      verified: value.verified,
+    });
+    if (value.createdAt !== undefined) rebuilt.createdAt = value.createdAt;
+    if (value.id !== undefined) rebuilt.id = value.id;
+    return rebuilt;
+  } catch {
+    return null;
+  }
+}
+
 function isSavedCheck(value) {
   if (!value || typeof value !== 'object') return false;
   const text = (key, max) => typeof value[key] === 'string' && value[key].trim().length > 0 && value[key].length <= max;
@@ -50,7 +79,7 @@ export function safeParse(raw) {
       : data && Array.isArray(data.checks)
         ? data.checks
         : null;
-    return Array.isArray(candidates) ? candidates.slice(0, 30).filter(isSavedCheck) : [];
+    return Array.isArray(candidates) ? candidates.slice(0, 30).map(normalizeSavedCheck).filter(Boolean) : [];
   } catch {
     return [];
   }
