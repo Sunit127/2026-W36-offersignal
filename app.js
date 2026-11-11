@@ -5,7 +5,19 @@ const form = $('#offer-form');
 const STORAGE_KEY = 'offersignal-checks-v1';
 const API_BASE = globalThis.OFFERSIGNAL_API_BASE || '';
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const NETWORK_TIMEOUT_MS = 10_000;
 let currentResult = null;
+
+async function fetchWithTimeout(input, init = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), NETWORK_TIMEOUT_MS);
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 let teamSave = null;
 
 function values() {
@@ -251,7 +263,7 @@ async function shareCheck() {
     } = currentResult;
     const privacySafe = { label, channel, score, level, matches, actions };
     const endpoint = `${API_BASE.replace(/\/$/, '')}/api/v1/checks`;
-    const response = await fetch(endpoint, {
+    const response = await fetchWithTimeout(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(privacySafe),
@@ -420,7 +432,7 @@ function wireUpActions() {
     const button = $('#delete-team-copy');
     button.disabled = true;
     try {
-      const response = await fetch(teamSave.url, { method: 'DELETE' });
+      const response = await fetchWithTimeout(teamSave.url, { method: 'DELETE' });
       if (response.status !== 204) {
         throw new Error('Server rejected deletion');
       }

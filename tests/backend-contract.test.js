@@ -44,3 +44,12 @@ test("local exports omit sender email as well as raw message text", () => {
   assert.match(app, /savedChecks\(\)\.map\(\(\{ message, senderEmail, \.\.\.rest \}\)/);
   assert.match(app, /senderEmailOmitted/);
 });
+
+test('team requests have a bounded network timeout', () => {
+  assert.match(app, /function fetchWithTimeout\(input, init = \{\}/);
+  assert.match(app, /new AbortController\(\)/);
+  assert.match(app, /NETWORK_TIMEOUT_MS = 10_000/);
+  assert.match(app, /fetchWithTimeout\(endpoint, \{/);
+  assert.match(app, /fetchWithTimeout\(teamSave\.url, \{/);
+  assert.match(app, /clearTimeout\(timeoutId\)/);
+});
