@@ -11,6 +11,9 @@ test("health and privacy-preserving create/fetch", async (t) => {
   migrate(db);
 
   const server = createServerForDb(db);
+  assert.equal(server.requestTimeout, 15_000);
+  assert.equal(server.headersTimeout, 10_000);
+  assert.equal(server.keepAliveTimeout, 5_000);
   await new Promise<void>((resolve) =>
     server.listen(0, "127.0.0.1", () => {
       resolve();

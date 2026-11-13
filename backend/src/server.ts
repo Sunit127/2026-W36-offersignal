@@ -9,6 +9,10 @@ import { randomUUID } from "node:crypto";
 const DB_PATH = process.env.OFFERSIGNAL_DB_PATH || "offersignal.sqlite";
 const IS_TEST = process.env.NODE_ENV === "test";
 const MAX_BODY = 64 * 1024; // Maximum accepted payload size in bytes.
+// Bound slow clients so an idle or partial request cannot hold a connection indefinitely.
+const REQUEST_TIMEOUT_MS = 15_000;
+const HEADERS_TIMEOUT_MS = 10_000;
+const KEEP_ALIVE_TIMEOUT_MS = 5_000;
 
 function configuredRateLimit() {
   // Invalid configuration must fall back to a bounded quota, never NaN.
@@ -300,6 +304,11 @@ export function createServerForDb(
       }
     });
   });
+  // Explicitly bound request, header, and idle connection lifetimes instead of
+  // inheriting environment-specific Node defaults.
+  server.requestTimeout = REQUEST_TIMEOUT_MS;
+  server.headersTimeout = HEADERS_TIMEOUT_MS;
+  server.keepAliveTimeout = KEEP_ALIVE_TIMEOUT_MS;
 
   let cleanupTimer: ReturnType<typeof setInterval> | undefined;
   server.on("listening", () => {
