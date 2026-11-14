@@ -334,7 +334,7 @@ export function createServerForDb(
 async function handleRequest(req: IncomingMessage, res: ServerResponse, db: any) {
     const contentLength = req.headers["content-length"];
     if (contentLength !== undefined) {
-      if (!/^\\d+$/.test(contentLength)) {
+      if (!/^\d+$/.test(contentLength)) {
         return sendJsonResponse(res, 400, { error: "invalid_content_length" });
       }
       if (Number(contentLength) > MAX_BODY) {
