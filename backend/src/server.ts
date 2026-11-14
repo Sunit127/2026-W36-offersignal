@@ -35,6 +35,8 @@ const SECURITY_HEADERS = {
   "X-Frame-Options": "DENY",
   "Referrer-Policy": "no-referrer",
   "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+  "Permissions-Policy": "camera=(), geolocation=(), microphone=()",
+  "X-Permitted-Cross-Domain-Policies": "none",
   "Vary": "Origin",
 };
 export const hits = new Map<string, number[]>();
@@ -330,6 +332,16 @@ export function createServerForDb(
 }
 
 async function handleRequest(req: IncomingMessage, res: ServerResponse, db: any) {
+    const contentLength = req.headers["content-length"];
+    if (contentLength !== undefined) {
+      if (!/^\\d+$/.test(contentLength)) {
+        return sendJsonResponse(res, 400, { error: "invalid_content_length" });
+      }
+      if (Number(contentLength) > MAX_BODY) {
+        return sendJsonResponse(res, 413, { error: "body_too_large" });
+      }
+    }
+
     const ip = (req.socket.remoteAddress || "unknown").replace(/^::ffff:/, "");
     if (req.method === "OPTIONS") {
       // CORS preflight should always be answered quickly.
