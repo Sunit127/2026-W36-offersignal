@@ -58,6 +58,19 @@ test("health and privacy-preserving create/fetch", async (t) => {
   assert.equal(preflight.status, 204);
   assert.equal(preflight.headers.get("x-content-type-options"), "nosniff");
   assert.equal(preflight.headers.get("cache-control"), "no-store");
+  assert.equal(preflight.headers.get("permissions-policy"), "camera=(), geolocation=(), microphone=()");
+  assert.equal(preflight.headers.get("x-permitted-cross-domain-policies"), "none");
+
+  const oversizedDeclared = await fetch(base + "/api/v1/checks", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "content-length": "65537",
+    },
+    body: "x".repeat(65537),
+  });
+  assert.equal(oversizedDeclared.status, 413);
+  assert.deepEqual(await oversizedDeclared.json(), { error: "body_too_large" });
 
   const payload = {
     label: "Remote role",
