@@ -1,4 +1,8 @@
-import { analyzeOffer, safeParse } from './logic.js';
+import {
+  analyzeOffer,
+  assertImportFileSize,
+  safeParse,
+} from './logic.js';
 
 const $ = (selector) => document.querySelector(selector);
 const form = $('#offer-form');
@@ -391,6 +395,7 @@ function wireUpActions() {
     const [file] = event.target.files || [];
     if (!file) return;
     try {
+      assertImportFileSize(file.size);
       const imported = safeParse(await file.text());
       if (!imported.length) throw new Error('no valid checks');
       const existing = savedChecks();
@@ -402,8 +407,10 @@ function wireUpActions() {
       });
       saveChecks([...additions, ...existing].slice(0, 30));
       showToast('Imported ' + additions.length + ' check' + (additions.length === 1 ? '' : 's'));
-    } catch {
-      showToast('Import failed: choose an OfferSignal JSON export');
+    } catch (error) {
+      showToast(error instanceof RangeError
+        ? error.message
+        : 'Import failed: choose an OfferSignal JSON export');
     } finally {
       event.target.value = '';
     }

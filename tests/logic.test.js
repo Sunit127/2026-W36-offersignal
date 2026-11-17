@@ -1,4 +1,4 @@
-import test from'node:test';import assert from'node:assert/strict';import{analyzeOffer,safeParse}from'../logic.js';
+import test from'node:test';import assert from'node:assert/strict';import{analyzeOffer,assertImportFileSize,MAX_IMPORT_BYTES,safeParse}from'../logic.js';
 const base={label:'Role',channel:'email',senderEmail:'recruiter@company.example',message:'Thank you for applying. We would like to schedule a video interview to discuss the role and your experience.',applied:true,interviewed:false,verified:true};
 test('normal interview invitation matches few signals',()=>{const r=analyzeOffer(base);assert.equal(r.level,'low');assert.equal(r.matches.length,1);});
 test('task scam language yields high concern',()=>{const r=analyzeOffer({...base,channel:'whatsapp',applied:false,verified:false,message:'Complete product optimization task sets. Recharge your account using USDT to unlock commission. Act immediately.'});assert.equal(r.level,'high');assert.ok(r.matches.some(x=>x.id==='pay'));assert.ok(r.matches.some(x=>x.id==='crypto'));});
@@ -52,4 +52,10 @@ test('analysis rejects values outside the UI contract', () => {
 test('personal domains with a DNS root dot still raise a warning', () => {
   const result = analyzeOffer({...base, senderEmail:'recruiter@gmail.com.'});
   assert.ok(result.matches.some((match) => match.id === 'email'));
+});
+
+test('imports are byte-limited before file contents are read', () => {
+  assert.doesNotThrow(() => assertImportFileSize(MAX_IMPORT_BYTES));
+  assert.throws(() => assertImportFileSize(MAX_IMPORT_BYTES + 1), /1 MiB/);
+  assert.throws(() => assertImportFileSize(-1), /1 MiB/);
 });

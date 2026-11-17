@@ -84,3 +84,11 @@ export function safeParse(raw) {
     return [];
   }
 }
+
+export const MAX_IMPORT_BYTES = 1024 * 1024;
+
+export function assertImportFileSize(size) {
+  if (!Number.isSafeInteger(size) || size < 0 || size > MAX_IMPORT_BYTES) {
+    throw new RangeError('Import failed: file must be 1 MiB or smaller');
+  }
+}

@@ -53,3 +53,10 @@ test('team requests have a bounded network timeout', () => {
   assert.match(app, /fetchWithTimeout\(teamSave\.url, \{/);
   assert.match(app, /clearTimeout\(timeoutId\)/);
 });
+
+test('import file size is checked before reading contents', () => {
+  const sizeCheck = app.indexOf('assertImportFileSize(file.size)');
+  const fileRead = app.indexOf('await file.text()');
+  assert.ok(sizeCheck >= 0);
+  assert.ok(fileRead > sizeCheck);
+});

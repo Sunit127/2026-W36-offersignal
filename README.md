@@ -60,7 +60,7 @@ No secrets or configuration are needed. `.env.example` only documents the option
 
 ## Validation, errors, and accessibility
 
-Offer labels, email format, and message length are validated. Helpful errors use an alert region. Results use a live region, keyboard focus is visible, fields and groups have labels, and the interface does not depend on color alone. Layouts adapt to narrow screens.
+Offer labels, email format, and message length are validated. JSON imports are rejected before reading when they exceed 1 MiB. Helpful errors use an alert region. Results use a live region, keyboard focus is visible, fields and groups have labels, and the interface does not depend on color alone. Layouts adapt to narrow screens.
 
 ## Privacy and security
 
