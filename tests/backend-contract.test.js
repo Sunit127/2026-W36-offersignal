@@ -60,3 +60,10 @@ test('import file size is checked before reading contents', () => {
   assert.ok(sizeCheck >= 0);
   assert.ok(fileRead > sizeCheck);
 });
+
+test('validation focus respects reduced-motion preferences', () => {
+  assert.match(
+    app,
+    /behavior: prefersReducedMotion\.matches \? ['"]auto['"] : ['"]smooth['"]/,
+  );
+});
