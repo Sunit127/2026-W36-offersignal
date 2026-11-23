@@ -312,7 +312,10 @@ function wireUpForm() {
       error.textContent = error.message;
       error.hidden = false;
       error.focus({ preventScroll: true });
-      error.scrollIntoView({ behavior: 'smooth' });
+      error.scrollIntoView({
+        behavior: prefersReducedMotion.matches ? 'auto' : 'smooth',
+        block: 'center',
+      });
     }
   });
 
